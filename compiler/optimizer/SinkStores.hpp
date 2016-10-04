@@ -46,7 +46,7 @@ namespace TR { class TreeTop; }
 // Store Sinking
 // There are two implementations: TR_TrivialSinkStores and TR_GeneralSinkStores
 
-class TR_LiveOnNotAllPaths : public TR::Allocatable<TR_LiveOnNotAllPaths, TR::Allocator>
+class TR_LiveOnNotAllPaths
    {
    public:
    TR_LiveOnNotAllPaths(TR::Compilation *comp, TR_Liveness *liveOnSomePaths, TR_LiveOnAllPaths *liveOnAllPaths);

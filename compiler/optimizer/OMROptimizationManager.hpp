@@ -31,7 +31,7 @@ namespace OMR { typedef OMR::OptimizationManager OptimizationManagerConnector; }
 #include <stddef.h>                         // for NULL
 #include <stdint.h>                         // for int32_t
 #include "compile/Compilation.hpp"          // for Compilation
-#include "env/TRMemory.hpp"                 // for Allocator, Allocatable, etc
+#include "env/TRMemory.hpp"                 // for Allocator etc
 #include "infra/Flags.hpp"                  // for flags32_t
 #include "infra/List.hpp"                   // for List
 #include "optimizer/OptimizationData.hpp"
@@ -55,7 +55,7 @@ typedef TR::Optimization *(*OptimizationFactory)(TR::OptimizationManager *m);
 namespace OMR
 {
 
-class OMR_EXTENSIBLE OptimizationManager : public TR::Allocatable<OptimizationManager, TR::Allocator>
+class OMR_EXTENSIBLE OptimizationManager
    {
    public:
 

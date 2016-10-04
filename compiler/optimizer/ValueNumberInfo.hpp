@@ -31,7 +31,7 @@ class TR_UseDefInfo;
 namespace TR { class Optimizer; }
 namespace TR { class ParameterSymbol; }
 
-class TR_ValueNumberInfo : public TR::Allocatable<TR_ValueNumberInfo, TR::Allocator>
+class TR_ValueNumberInfo
    {
 
    public:

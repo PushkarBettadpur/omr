@@ -31,7 +31,7 @@ namespace OMR { typedef OMR::Optimization OptimizationConnector; }
 #include <stddef.h>                                   // for NULL
 #include <stdint.h>                                   // for int32_t
 #include "compile/Compilation.hpp"                    // for Compilation
-#include "env/TRMemory.hpp"                           // for Allocator, Allocatable, etc
+#include "env/TRMemory.hpp"                           // for Allocator etc
 #include "il/ILOpCodes.hpp"                           // for ILOpCodes
 #include "infra/Assert.hpp"                           // for TR_ASSERT
 #include "infra/Random.hpp"                           // for TR_HasRandomGenerator
@@ -50,8 +50,7 @@ namespace TR { class Optimization; }
 namespace OMR
 {
 
-class OMR_EXTENSIBLE Optimization: public TR_HasRandomGenerator,
-                                   public TR::Allocatable<TR::Optimization, TR::Allocator>
+class OMR_EXTENSIBLE Optimization: public TR_HasRandomGenerator
    {
 public:
 

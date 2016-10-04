@@ -103,7 +103,7 @@ template<class Container>class TR_BackwardUnionDFSetAnalysis<Container *>;
 // the analyses to perform TR::Node and TR::TreeTop related computations.
 //
 //
-class TR_DataFlowAnalysis : public TR::Allocatable<TR_DataFlowAnalysis, TR::Allocator>
+class TR_DataFlowAnalysis
    {
    public:
 

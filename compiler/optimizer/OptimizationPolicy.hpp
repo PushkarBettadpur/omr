@@ -20,12 +20,12 @@
 #define TR_OPTIMIZATIONPOLICY_INCL
 
 #include "compile/Compilation.hpp"      // for Compilation
-#include "env/TRMemory.hpp"             // for Allocator, Allocatable, etc
+#include "env/TRMemory.hpp"             // for Allocator etc
 
 namespace TR
 {
 
-class OptimizationPolicy: public TR::Allocatable<OptimizationPolicy, TR::Allocator>
+class OptimizationPolicy
 	{
 	public:
 

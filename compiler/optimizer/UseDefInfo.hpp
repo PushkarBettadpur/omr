@@ -57,7 +57,7 @@ namespace TR { class TreeTop; }
  * This means that there are a total of Z index values.
  * The bit vectors that hold use information are of size (Z-X).
  */
-class TR_UseDefInfo : public TR::Allocatable<TR_UseDefInfo, TR::Allocator>
+class TR_UseDefInfo : 
    {
    public:
 

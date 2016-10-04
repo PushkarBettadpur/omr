@@ -351,7 +351,7 @@ class OMR_EXTENSIBLE Instruction : public OMR::Instruction
       { return (_targetMemSize!=0) ? ((TR::MemoryReference**)_operands)+_targetRegSize+_sourceRegSize+_sourceMemSize : NULL;  }
 
    template <typename T>
-   class RegisterArray : public TR::Allocatable<RegisterArray<T>, TR::Allocator>
+   class RegisterArray
       {
       public:
          TR::Allocator allocator() { return TR::comp()->allocator(); }
@@ -390,7 +390,7 @@ class OMR_EXTENSIBLE Instruction : public OMR::Instruction
             }
       };
 
-   class RegisterBitVector : public TR::Allocatable<RegisterBitVector, TR::Allocator>
+   class RegisterBitVector
       {
       public:
          TR::Allocator allocator() { return TR::comp()->allocator(); }

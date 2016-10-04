@@ -20,12 +20,12 @@
 #define TR_OptimizationUtil_INCL
 
 #include "compile/Compilation.hpp"      // for Compilation
-#include "env/TRMemory.hpp"             // for Allocator, Allocatable, etc
+#include "env/TRMemory.hpp"             // for Allocator etc
 
 namespace TR
 {
 
-class OptimizationUtil: public TR::Allocatable<OptimizationUtil, TR::Allocator>
+class OptimizationUtil
 	{
 	public:
 
