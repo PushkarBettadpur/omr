@@ -1102,23 +1102,9 @@ public:
 
    bool getSupportsOpCodeForAutoSIMD(TR::ILOpCode, TR::DataTypes);
 
-   bool canOptimizeEdit(uint8_t *parm, int32_t length);
-   bool parseEditParm(uint8_t *parm,
-                      int32_t length,
-                      bool &leadingSigs,
-                      bool &trailingStr,
-                      uint8_t &fill,
-                      int32_t &numDigits,
-                      int32_t &numSigs,
-                      int32_t &sigOff,
-                      int32_t &lastDigit,
-                      int32_t &digitsAfterSig);
-
    TR::Instruction *_ccInstruction;
    TR::Instruction* ccInstruction() { return _ccInstruction; }
    void setCCInstruction(TR::Instruction* cc) { _ccInstruction = cc; }
-
-   bool replaceWithDestructiveFormIfPossible(TR::Instruction* inst);
 
    #define TR_DEFAULT_DATA_SNIPPET_EXPONENT 4
    int32_t constantDataSnippetExponent() { return TR_DEFAULT_DATA_SNIPPET_EXPONENT; } // 1 << 4 = 16 byte max size for each constantDataSnippet
