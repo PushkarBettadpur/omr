@@ -2455,6 +2455,9 @@ OMR::Options::jitPreProcess()
    if (TR::Compiler->target.cpu.isPower())
       self()->setOption(TR_DisableRegisterPressureSimulation);
 
+   if (TR::Compiler->target.cpu.isZ())
+      self()->setOption(TR_StressTrampolines);
+
 #if defined(TR_HOST_ARM)
    // alignment problem for float/double
    self()->setOption(TR_DisableIntrinsics);
