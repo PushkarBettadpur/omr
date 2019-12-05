@@ -995,7 +995,7 @@ OMR::Z::Machine::assignBestRegisterSingle(TR::Register    *targetRegister,
          newAssignedRegister->setAssignedRegister(targetRegister);
          newAssignedRegister->setState(TR::RealRegister::Assigned);
          assignedRegister->setAssignedRegister(NULL);
-         assignedRegister->setState(TR::RealRegister::Free);
+         assignedRegister->setState(TR::RealRegister::Unlatched);
          assignedRegister = newAssignedRegister;
          }
       }
@@ -1014,7 +1014,7 @@ OMR::Z::Machine::assignBestRegisterSingle(TR::Register    *targetRegister,
       newAssignedRegister->setAssignedRegister(targetRegister);
       newAssignedRegister->setState(TR::RealRegister::Assigned);
       assignedRegister->setAssignedRegister(NULL);
-      assignedRegister->setState(TR::RealRegister::Free);
+      assignedRegister->setState(TR::RealRegister::Unlatched);
       assignedRegister = newAssignedRegister;
       }
 
