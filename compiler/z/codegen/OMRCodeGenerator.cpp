@@ -596,6 +596,8 @@ OMR::Z::CodeGenerator::CodeGenerator()
       comp->setOption(TR_DisableVectorRegGRA);
       }
 
+   self()->setSupportsRecompilation();
+
    // This enables the tactical GRA
    self()->setSupportsGlRegDeps();
 
