@@ -1798,8 +1798,9 @@ OMR::Options::Options(
 
    // if this is the first compile -- try to figure out the hotness from the optionsets...
    //
+   optimizationPlan->setOptLevel(noOpt);
    TR::OptionSet *optionSet = TR::Options::findOptionSet(trMemory, index, lineNum, compilee, optimizationPlan->getOptLevel(), isAOT);
-
+   _optLevel = noOpt;
    TR::Options *masterOptions;
    if (optionSet)
       masterOptions = optionSet->getOptions();
