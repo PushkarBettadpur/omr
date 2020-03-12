@@ -22,6 +22,7 @@
 #ifndef ILVALIDATOR_HPP
 #define ILVALIDATOR_HPP
 
+#include "env/TRMemory.hpp"
 #include <vector>
 
 #include "ras/ILValidationStrategies.hpp"
@@ -71,30 +72,32 @@ class ILValidator
     * the entire Method(encapsulated as a TR::ResolvedMethodSymbol) in order
     * to find out if the IL satisifies the given condition.
     */
-   std::vector<TR::MethodValidationRule *> _methodValidationRules;
+    typedef std::vector<TR::MethodValidationRule *, TR::typed_allocator<TR::MethodValidationRule *, TR::Allocator>> MethodValidationRulesVector;
+    MethodValidationRulesVector _methodValidationRules;
    /**
     * Used for checking properties across an extended Block.
     */
-   std::vector<TR::BlockValidationRule *> _blockValidationRules;
+    typedef std::vector<TR::BlockValidationRule *, TR::typed_allocator<TR::BlockValidationRule *, TR::Allocator>> BlockValidationRulesVector;
+    BlockValidationRulesVector _blockValidationRules;
    /**
     * NodeValidationRules check whether a particular TR::Node has
     * some property. Meaning a NodeValidationRule doesn't need to keep track
     * of already encountered nodes or peek into other blocks to see whether
     * a particular Node is valid or not.
     */
-   std::vector<TR::NodeValidationRule *> _nodeValidationRules;
-
+    typedef std::vector<TR::NodeValidationRule *, TR::typed_allocator<TR::NodeValidationRule *, TR::Allocator>> NodeValidationRulesVector;
+    NodeValidationRulesVector _nodeValidationRules;
   /** \brief
    *     Selects the set of `ILValidationRules` corresponding to the given
    *     `OMR::ILValidationStrategy`.
    */
-   std::vector<TR::MethodValidationRule *>
+   MethodValidationRulesVector
    getRequiredMethodValidationRules(const OMR::ILValidationStrategy *strategy);
 
-   std::vector<TR::BlockValidationRule *>
+   BlockValidationRulesVector
    getRequiredBlockValidationRules(const OMR::ILValidationStrategy *strategy);
 
-   std::vector<TR::NodeValidationRule *>
+   NodeValidationRulesVector
    getRequiredNodeValidationRules(const OMR::ILValidationStrategy *strategy);
 
 

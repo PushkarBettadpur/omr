@@ -107,7 +107,10 @@ T* end(T(&reqArray)[N])
    }
 
 TR::ILValidator::ILValidator(TR::Compilation *comp)
-   :_comp(comp)
+   :_comp(comp),
+    _methodValidationRules(getTypedAllocator<TR::MethodValidationRule *>(comp->allocator())),
+    _blockValidationRules(getTypedAllocator<TR::BlockValidationRule *>(comp->allocator())),
+    _nodeValidationRules(getTypedAllocator<TR::NodeValidationRule *>(comp->allocator()))
    {
      /**
       * All available `*ValidationRule`s are initialized during the creation of
@@ -145,10 +148,10 @@ TR::ILValidator::ILValidator(TR::Compilation *comp)
      _nodeValidationRules.assign(begin(temp_node_rules), end(temp_node_rules));
    }
 
-std::vector<TR::MethodValidationRule *>
+TR::ILValidator::MethodValidationRulesVector
 TR::ILValidator::getRequiredMethodValidationRules(const OMR::ILValidationStrategy *strategy)
    {
-   std::vector<TR::MethodValidationRule *> reqMethodValidationRules;
+   TR::ILValidator::MethodValidationRulesVector reqMethodValidationRules(getTypedAllocator<TR::MethodValidationRule *>(_comp->allocator()));
    while (strategy->id != OMR::endRules)
       {
       for (auto it = _methodValidationRules.begin(); it != _methodValidationRules.end(); ++it)
@@ -167,10 +170,10 @@ TR::ILValidator::getRequiredMethodValidationRules(const OMR::ILValidationStrateg
    return reqMethodValidationRules;
    }
 
-std::vector<TR::BlockValidationRule *>
+TR::ILValidator::BlockValidationRulesVector
 TR::ILValidator::getRequiredBlockValidationRules(const OMR::ILValidationStrategy *strategy)
    {
-   std::vector<TR::BlockValidationRule *> reqBlockValidationRules;
+   TR::ILValidator::BlockValidationRulesVector reqBlockValidationRules(getTypedAllocator<TR::BlockValidationRule *>(_comp->allocator()));
    while (strategy->id != OMR::endRules)
       {
       for (auto it = _blockValidationRules.begin(); it != _blockValidationRules.end(); ++it)
@@ -185,10 +188,10 @@ TR::ILValidator::getRequiredBlockValidationRules(const OMR::ILValidationStrategy
    return reqBlockValidationRules;
    }
 
-std::vector<TR::NodeValidationRule *>
+TR::ILValidator::NodeValidationRulesVector
 TR::ILValidator::getRequiredNodeValidationRules(const OMR::ILValidationStrategy *strategy)
    {
-   std::vector<TR::NodeValidationRule *> reqNodeValidationRules;
+   TR::ILValidator::NodeValidationRulesVector reqNodeValidationRules(getTypedAllocator<TR::NodeValidationRule *>(_comp->allocator()));
    while (strategy->id != OMR::endRules)
       {
       for (auto it = _nodeValidationRules.begin(); it != _nodeValidationRules.end(); ++it)
@@ -211,11 +214,11 @@ void TR::ILValidator::validate(const OMR::ILValidationStrategy *strategy)
     *    From all the available `ILValidationRule`s, only select the ones
     *    corresponding to the given `OMR::ILValidationStrategy`.
     */
-   std::vector<TR::MethodValidationRule *> reqMethodValidationRules =
+   TR::ILValidator::MethodValidationRulesVector reqMethodValidationRules =
       getRequiredMethodValidationRules(strategy);
-   std::vector<TR::BlockValidationRule *> reqBlockValidationRules =
+   TR::ILValidator::BlockValidationRulesVector reqBlockValidationRules =
       getRequiredBlockValidationRules(strategy);
-   std::vector<TR::NodeValidationRule *> reqNodeValidationRules =
+   TR::ILValidator::NodeValidationRulesVector reqNodeValidationRules =
       getRequiredNodeValidationRules(strategy);
 
 
