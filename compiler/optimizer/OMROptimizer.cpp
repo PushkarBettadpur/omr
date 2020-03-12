@@ -1672,6 +1672,7 @@ int32_t OMR::Optimizer::performOptimization(const OptimizationStrategy *optimiza
    if (mustBeDone ||
        (optIndex >= firstOptIndex && optIndex <= lastOptIndex))
       {
+      traceMsg(comp(), "mustBeDone || optIndex > 1 and < last\n");
       bool needTreeDump = false;
       bool needStructureDump = false;
 
