@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 1991, 2019 IBM Corp. and others
+ * Copyright (c) 1991, 2020 IBM Corp. and others
  *
  * This program and the accompanying materials are made available under
  * the terms of the Eclipse Public License 2.0 which accompanies this
@@ -148,12 +148,13 @@ public:
 	 */
 private:
 	/**
-	 * Flush the threads reference and remembered set caches before waiting in getNextScanCache.
+	 * Flush copy/scan count updates, the threads reference and remembered set caches before waiting in getNextScanCache.
 	 * This removes the requirement of a synchronization point after calls to completeScan when
 	 * it is followed by reference or remembered set processing.
 	 * @param env - current thread environment
+	 * @param finalFlush - lets the copy/scan flush know if it's the last thread performing the flush
 	 */
-	void flushBuffersForGetNextScanCache(MM_EnvironmentStandard *env);
+	void flushBuffersForGetNextScanCache(MM_EnvironmentStandard *env, bool finalFlush = false);
 	
 	void saveMasterThreadTenureTLHRemainders(MM_EnvironmentStandard *env);
 	void restoreMasterThreadTenureTLHRemainders(MM_EnvironmentStandard *env);
@@ -199,6 +200,11 @@ private:
 		
 		return shouldAbort;
 	}
+
+	/** 
+	 * A simple heuristic that projects the need for copy-scan cache size pool, based on heap size that Scavenger operates with)
+	 */	
+	uintptr_t calculateMaxCacheCount(uintptr_t activeMemorySize);
 
 public:
 	/**
@@ -250,7 +256,11 @@ public:
 	MMINLINE bool copyAndForward(MM_EnvironmentStandard *env, volatile omrobjectptr_t *objectPtrIndirect);
 
 	MMINLINE omrobjectptr_t copy(MM_EnvironmentStandard *env, MM_ForwardedHeader* forwardedHeader);
-
+	
+	/* Flush remaining Copy Scan updates which would otherwise be discarded 
+	 * @param majorFlush last thread to flush updates should perform a major flush (push accumulated updates to history record) 
+	 */ 
+	MMINLINE void flushCopyScanCounts(MM_EnvironmentBase* env, bool majorFlush);
 	MMINLINE void updateCopyScanCounts(MM_EnvironmentBase* env, uint64_t slotsScanned, uint64_t slotsCopied);
 	bool splitIndexableObjectScanner(MM_EnvironmentStandard *env, GC_ObjectScanner *objectScanner, uintptr_t startIndex, omrobjectptr_t *rememberedSetSlot);
 
@@ -335,6 +345,13 @@ public:
 	
 	void scavengeRememberedSetListIndirect(MM_EnvironmentStandard *env);
 	void scavengeRememberedSetListDirect(MM_EnvironmentStandard *env);
+
+	MMINLINE void handleInactiveSurvivorCopyScanCache(MM_EnvironmentStandard *currentEnv, MM_EnvironmentStandard *targetEnv, bool flushCaches, bool final);
+	MMINLINE void handleSurvivorCopyScanCache(MM_EnvironmentStandard *currentEnv, MM_EnvironmentStandard *targetEnv, bool flushCaches, bool final);
+	MMINLINE void handleInactiveTenureCopyScanCache(MM_EnvironmentStandard *currentEnv, MM_EnvironmentStandard *targetEnv, bool flushCaches, bool final);
+	MMINLINE void handleTenureCopyScanCache(MM_EnvironmentStandard *currentEnv, MM_EnvironmentStandard *targetEnv, bool flushCaches, bool final);
+	MMINLINE void handleInactiveDeferredCopyScanCache(MM_EnvironmentStandard *currentEnv, MM_EnvironmentStandard *targetEnv, bool flushCaches, bool final);
+	MMINLINE void handleDeferredCopyScanCache(MM_EnvironmentStandard *currentEnv, MM_EnvironmentStandard *targetEnv, bool flushCaches, bool final);
 #endif /* OMR_GC_CONCURRENT_SCAVENGER */
 
 	/**
@@ -443,6 +460,10 @@ public:
 	 */
 	void abandonSurvivorTLHRemainder(MM_EnvironmentStandard *env);
 	void abandonTenureTLHRemainder(MM_EnvironmentStandard *env, bool preserveRemainders = false);
+	
+	MMINLINE bool activateSurvivorCopyScanCache(MM_EnvironmentStandard *env);
+	MMINLINE bool activateTenureCopyScanCache(MM_EnvironmentStandard *env);
+	void activateDeferredCopyScanCache(MM_EnvironmentStandard *env);
 
 	void reportGCStart(MM_EnvironmentStandard *env);
 	void reportGCEnd(MM_EnvironmentStandard *env);
@@ -662,9 +683,10 @@ public:
 	/**
 	 * All open copy caches (even if not full) are pushed onto scan queue. Unused memory is abondoned.
 	 * @param env Invoking thread, for which copy caches are to be released. Could be either GC or mutator thread.
+	 * @param flushCaches If true, really push caches to scan queue, otherwise just deactivate them for possible near future use
 	 * @param final If true (typically at the end of a cycle), abandon TLH remainders, too. Otherwise keep them for possible future copy cache refresh.
 	 */
-	void threadReleaseCaches(MM_EnvironmentBase *env, bool final);
+	void threadReleaseCaches(MM_EnvironmentBase *env, bool flushCaches, bool final);
 	
 	/**
 	 * trigger STW phase (either start or end) of a Concurrent Scavenger Cycle 
@@ -859,6 +881,7 @@ public:
 		, _concurrentState(concurrent_state_idle)
 		, _concurrentScavengerSwitchCount(0)
 		, _shouldYield(false)
+		, _concurrentPhaseStats()
 #endif /* #if defined(OMR_GC_CONCURRENT_SCAVENGER) */
 
 		, _omrVM(env->getOmrVM())

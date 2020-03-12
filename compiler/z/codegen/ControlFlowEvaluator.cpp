@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corp. and others
+ * Copyright (c) 2000, 2020 IBM Corp. and others
  *
  * This program and the accompanying materials are made available under
  * the terms of the Eclipse Public License 2.0 which accompanies this
@@ -323,130 +323,33 @@ generateS390Compare(TR::Node * node, TR::CodeGenerator * cg, TR::InstOpCode::Mne
    return branchOpCond;
    }
 
-/**
- *  \brief
- *     Compares two values are returns the max/min of the two.
- *     ONLY SUPPORTS imax, imin, lmax, lmin
- *
- *  \param node
- *     The node representing a call to max or min.
- *
- *  \param cg
- *     The code generator used to generate the instructions.
- *
- *  \param isMax
- *     Determines the type of function, either a max or min call.
- *
- *  \return
- *     The register containing the max/min value.
- */
-static TR::Register* maxMinHelper(TR::Node* node, TR::CodeGenerator* cg, bool isMax)
+static TR::Register*
+xmaxxminHelper(TR::Node* node, TR::CodeGenerator* cg, TR::InstOpCode::Mnemonic compareRROp, TR::InstOpCode::S390BranchCondition branchCond, TR::InstOpCode::Mnemonic moveRROp)
    {
    TR::Node* lhsNode = node->getChild(0);
    TR::Node* rhsNode = node->getChild(1);
 
-   TR::Register* lhsReg = NULL;
+   TR::Register* lhsReg = cg->gprClobberEvaluate(lhsNode);
    TR::Register* rhsReg = cg->evaluate(rhsNode);
 
-   // Mask is 4 to pick rhs when lhs is less for max, 2 to pick rhs when lhs is greater for min
-   const uint8_t mask = isMax ? 0x4 : 0x2;
+   TR::LabelSymbol* cFlowRegionStart = generateLabelSymbol(cg);
+   TR::LabelSymbol* cFlowRegionEnd = generateLabelSymbol(cg);
 
-   if (node->getOpCodeValue() == TR::imax || node->getOpCodeValue() == TR::imin)
-      {
-      if (cg->comp()->target().cpu.getSupportsArch(TR::CPU::z15))
-         {
-         lhsReg = cg->allocateRegister();
+   generateS390LabelInstruction(cg, TR::InstOpCode::LABEL, node, cFlowRegionStart);
+   cFlowRegionStart->setStartInternalControlFlow();
 
-         // Load into a tmp instead of clobberEvaluating into lhsReg to avoid an extra register shuffle
-         TR::Register* tmpRegister = cg->evaluate(lhsNode);
+   generateRREInstruction(cg, compareRROp, node, lhsReg, rhsReg);
+   generateS390BranchInstruction(cg, TR::InstOpCode::BRC, branchCond, node, cFlowRegionEnd);
 
-         generateRRInstruction(cg, TR::InstOpCode::CR, node, tmpRegister, rhsReg);
-         generateRRFInstruction(cg, TR::InstOpCode::SELR, node, lhsReg, rhsReg, tmpRegister, mask);
-         }
-      else if (cg->comp()->target().cpu.getSupportsArch(TR::CPU::z196))
-         {
-         lhsReg = cg->gprClobberEvaluate(lhsNode);
+   generateRREInstruction(cg, moveRROp, node, lhsReg, rhsReg);
 
-         generateRRInstruction(cg, TR::InstOpCode::CR, node, lhsReg, rhsReg);
-         generateRRFInstruction(cg, TR::InstOpCode::LOCR, node, lhsReg, rhsReg, mask, true);
-         }
-      else
-         {
-         lhsReg = cg->gprClobberEvaluate(lhsNode);
+   TR::RegisterDependencyConditions* deps = new (cg->trHeapMemory()) TR::RegisterDependencyConditions(0, 2, cg);
 
-         TR::LabelSymbol* cFlowRegionStart = generateLabelSymbol(cg);
-         TR::LabelSymbol* cFlowRegionEnd = generateLabelSymbol(cg);
+   deps->addPostConditionIfNotAlreadyInserted(lhsReg, TR::RealRegister::AssignAny);
+   deps->addPostConditionIfNotAlreadyInserted(rhsReg, TR::RealRegister::AssignAny);
 
-         generateS390LabelInstruction(cg, TR::InstOpCode::LABEL, node, cFlowRegionStart);
-         cFlowRegionStart->setStartInternalControlFlow();
-
-         auto bc = isMax ?
-            TR::InstOpCode::COND_BHR :
-            TR::InstOpCode::COND_BLR;
-
-         generateS390CompareAndBranchInstruction(cg, TR::InstOpCode::CR, node, lhsReg, rhsReg, bc, cFlowRegionEnd, false);
-
-         generateRRInstruction(cg, TR::InstOpCode::LR, node, lhsReg, rhsReg);
-
-         TR::RegisterDependencyConditions* deps = new (cg->trHeapMemory()) TR::RegisterDependencyConditions(0, 2, cg);
-
-         deps->addPostConditionIfNotAlreadyInserted(lhsReg, TR::RealRegister::AssignAny);
-         deps->addPostConditionIfNotAlreadyInserted(rhsReg, TR::RealRegister::AssignAny);
-
-         generateS390LabelInstruction(cg, TR::InstOpCode::LABEL, node, cFlowRegionEnd, deps);
-         cFlowRegionEnd->setEndInternalControlFlow();
-         }
-      }
-   else if (node->getOpCodeValue() == TR::lmax || node->getOpCodeValue() == TR::lmin)
-      {
-      if (cg->comp()->target().cpu.getSupportsArch(TR::CPU::z15))
-         {
-         lhsReg = cg->allocateRegister();
-
-         // Load into a tmp instead of clobberEvaluating into lhsReg to avoid an extra register shuffle
-         TR::Register* tmpRegister = cg->evaluate(lhsNode);
-
-         generateRREInstruction(cg, TR::InstOpCode::CGR, node, tmpRegister, rhsReg);
-         generateRRFInstruction(cg, TR::InstOpCode::SELGR, node, lhsReg, rhsReg, tmpRegister, mask);
-         }
-      else if (cg->comp()->target().cpu.getSupportsArch(TR::CPU::z196))
-         {
-         lhsReg = cg->gprClobberEvaluate(lhsNode);
-
-         generateRREInstruction(cg, TR::InstOpCode::CGR, node, lhsReg, rhsReg);
-         generateRRFInstruction(cg, TR::InstOpCode::LOCGR, node, lhsReg, rhsReg, mask, true);
-         }
-      else
-         {
-         lhsReg = cg->gprClobberEvaluate(lhsNode);
-
-         TR::LabelSymbol* cFlowRegionStart = generateLabelSymbol(cg);
-         TR::LabelSymbol* cFlowRegionEnd = generateLabelSymbol(cg);
-
-         generateS390LabelInstruction(cg, TR::InstOpCode::LABEL, node, cFlowRegionStart);
-         cFlowRegionStart->setStartInternalControlFlow();
-
-         auto bc = isMax ?
-            TR::InstOpCode::COND_BHR :
-            TR::InstOpCode::COND_BLR;
-
-         generateS390CompareAndBranchInstruction(cg, TR::InstOpCode::CGR, node, lhsReg, rhsReg, bc, cFlowRegionEnd, false);
-
-         generateRRInstruction(cg, TR::InstOpCode::LGR, node, lhsReg, rhsReg);
-
-         TR::RegisterDependencyConditions* deps = new (cg->trHeapMemory()) TR::RegisterDependencyConditions(0, 2, cg);
-
-         deps->addPostConditionIfNotAlreadyInserted(lhsReg, TR::RealRegister::AssignAny);
-         deps->addPostConditionIfNotAlreadyInserted(rhsReg, TR::RealRegister::AssignAny);
-
-         generateS390LabelInstruction(cg, TR::InstOpCode::LABEL, node, cFlowRegionEnd, deps);
-         cFlowRegionEnd->setEndInternalControlFlow();
-         }
-      }
-   else
-      {
-      TR_ASSERT_FATAL(node->getOpCodeValue(), "Opcode %s cannot be evaluated by maxMinHelper\n", node->getOpCode().getName());
-      }
+   generateS390LabelInstruction(cg, TR::InstOpCode::LABEL, node, cFlowRegionEnd, deps);
+   cFlowRegionEnd->setEndInternalControlFlow();
 
    node->setRegister(lhsReg);
 
@@ -456,18 +359,145 @@ static TR::Register* maxMinHelper(TR::Node* node, TR::CodeGenerator* cg, bool is
    return lhsReg;
    }
 
-TR::Register *
-OMR::Z::TreeEvaluator::maxEvaluator(TR::Node *node, TR::CodeGenerator *cg)
+static TR::Register*
+imaximinHelper(TR::Node* node, TR::CodeGenerator* cg, TR::InstOpCode::Mnemonic compareRROp, TR::InstOpCode::S390BranchCondition branchCond, TR::InstOpCode::Mnemonic moveRROp)
    {
-   return maxMinHelper(node, cg, true);
+   if (cg->comp()->target().cpu.getSupportsArch(TR::CPU::z15))
+      {
+      TR::Node* lhsNode = node->getChild(0);
+      TR::Node* rhsNode = node->getChild(1);
+
+      TR::Register* resultReg = cg->allocateRegister();
+      TR::Register* lhsReg = cg->evaluate(lhsNode);
+      TR::Register* rhsReg = cg->evaluate(rhsNode);
+
+      generateRRInstruction(cg, TR::InstOpCode::CR, node, lhsReg, rhsReg);
+      generateRRFInstruction(cg, TR::InstOpCode::SELR, node, resultReg, rhsReg, lhsReg, getMaskForBranchCondition(getReverseBranchCondition(branchCond)));
+
+      node->setRegister(resultReg);
+
+      cg->decReferenceCount(lhsNode);
+      cg->decReferenceCount(rhsNode);
+
+      return resultReg;
+      }
+   else if (cg->comp()->target().cpu.getSupportsArch(TR::CPU::z196))
+      {
+      TR::Node* lhsNode = node->getChild(0);
+      TR::Node* rhsNode = node->getChild(1);
+
+      TR::Register* lhsReg = cg->gprClobberEvaluate(lhsNode);
+      TR::Register* rhsReg = cg->evaluate(rhsNode);
+
+      generateRRInstruction(cg, TR::InstOpCode::CR, node, lhsReg, rhsReg);
+      generateRRFInstruction(cg, TR::InstOpCode::LOCR, node, lhsReg, rhsReg, getMaskForBranchCondition(getReverseBranchCondition(branchCond)), true);
+
+      node->setRegister(lhsReg);
+
+      cg->decReferenceCount(lhsNode);
+      cg->decReferenceCount(rhsNode);
+
+      return lhsReg;
+      }
+   else
+      {
+      return xmaxxminHelper(node, cg, compareRROp, branchCond, moveRROp);
+      }
+   }
+
+static TR::Register*
+lmaxlminHelper(TR::Node* node, TR::CodeGenerator* cg, TR::InstOpCode::Mnemonic compareRROp, TR::InstOpCode::S390BranchCondition branchCond, TR::InstOpCode::Mnemonic moveRROp)
+   {
+   if (cg->comp()->target().cpu.getSupportsArch(TR::CPU::z15))
+      {
+      TR::Node* lhsNode = node->getChild(0);
+      TR::Node* rhsNode = node->getChild(1);
+
+      TR::Register* resultReg = cg->allocateRegister();
+      TR::Register* lhsReg = cg->evaluate(lhsNode);
+      TR::Register* rhsReg = cg->evaluate(rhsNode);
+
+      generateRREInstruction(cg, TR::InstOpCode::CGR, node, lhsReg, rhsReg);
+      generateRRFInstruction(cg, TR::InstOpCode::SELGR, node, resultReg, rhsReg, lhsReg, getMaskForBranchCondition(getReverseBranchCondition(branchCond)));
+
+      node->setRegister(resultReg);
+
+      cg->decReferenceCount(lhsNode);
+      cg->decReferenceCount(rhsNode);
+
+      return resultReg;
+      }
+   else if (cg->comp()->target().cpu.getSupportsArch(TR::CPU::z196))
+      {
+      TR::Node* lhsNode = node->getChild(0);
+      TR::Node* rhsNode = node->getChild(1);
+
+      TR::Register* lhsReg = cg->gprClobberEvaluate(lhsNode);
+      TR::Register* rhsReg = cg->evaluate(rhsNode);
+
+      generateRREInstruction(cg, TR::InstOpCode::CGR, node, lhsReg, rhsReg);
+      generateRRFInstruction(cg, TR::InstOpCode::LOCGR, node, lhsReg, rhsReg, getMaskForBranchCondition(getReverseBranchCondition(branchCond)), true);
+
+      node->setRegister(lhsReg);
+
+      cg->decReferenceCount(lhsNode);
+      cg->decReferenceCount(rhsNode);
+
+      return lhsReg;
+      }
+   else
+      {
+      return xmaxxminHelper(node, cg, compareRROp, branchCond, moveRROp);
+      }
+   }
+
+TR::Register*
+OMR::Z::TreeEvaluator::imaxEvaluator(TR::Node* node, TR::CodeGenerator* cg)
+   {
+   return imaximinHelper(node, cg, TR::InstOpCode::CR, TR::InstOpCode::COND_BHR, TR::InstOpCode::LR);
+   }
+
+TR::Register*
+OMR::Z::TreeEvaluator::lmaxEvaluator(TR::Node* node, TR::CodeGenerator* cg)
+   {
+   return lmaxlminHelper(node, cg, TR::InstOpCode::CGR, TR::InstOpCode::COND_BHR, TR::InstOpCode::LGR);
+   }
+
+TR::Register*
+OMR::Z::TreeEvaluator::fmaxEvaluator(TR::Node* node, TR::CodeGenerator* cg)
+   {
+   return xmaxxminHelper(node, cg, TR::InstOpCode::CEBR, TR::InstOpCode::COND_BHR, TR::InstOpCode::LER);
+   }
+
+TR::Register*
+OMR::Z::TreeEvaluator::dmaxEvaluator(TR::Node* node, TR::CodeGenerator* cg)
+   {
+   return xmaxxminHelper(node, cg, TR::InstOpCode::CDBR, TR::InstOpCode::COND_BHR, TR::InstOpCode::LDR);
    }
 
 TR::Register *
-OMR::Z::TreeEvaluator::minEvaluator(TR::Node *node, TR::CodeGenerator *cg)
+OMR::Z::TreeEvaluator::iminEvaluator(TR::Node *node, TR::CodeGenerator *cg)
    {
-   return maxMinHelper(node, cg, false);
+   return imaximinHelper(node, cg, TR::InstOpCode::CR, TR::InstOpCode::COND_BLR, TR::InstOpCode::LR);
    }
 
+TR::Register *
+OMR::Z::TreeEvaluator::lminEvaluator(TR::Node *node, TR::CodeGenerator *cg)
+   {
+   return lmaxlminHelper(node, cg, TR::InstOpCode::CGR, TR::InstOpCode::COND_BLR, TR::InstOpCode::LGR);
+   }
+
+TR::Register*
+OMR::Z::TreeEvaluator::fminEvaluator(TR::Node* node, TR::CodeGenerator* cg)
+   {
+   return xmaxxminHelper(node, cg, TR::InstOpCode::CEBR, TR::InstOpCode::COND_BLR, TR::InstOpCode::LER);
+   }
+
+TR::Register*
+OMR::Z::TreeEvaluator::dminEvaluator(TR::Node* node, TR::CodeGenerator* cg)
+   {
+   return xmaxxminHelper(node, cg, TR::InstOpCode::CDBR, TR::InstOpCode::COND_BLR, TR::InstOpCode::LDR);
+   }
 
 /**
  * 64bit version lcmpEvaluator Helper: long compare (1 if child1 > child2, 0 if child1 == child2,
@@ -2331,7 +2361,7 @@ OMR::Z::TreeEvaluator::inlineIfBifEvaluator(TR::Node * ifNode, TR::CodeGenerator
    }
 
 /**
- * Ternary Evaluator - evaluates all types of ternary opcodes
+ * Select Evaluator - evaluates all types of select opcodes
  */
 TR::InstOpCode::S390BranchCondition OMR::Z::TreeEvaluator::getBranchConditionFromCompareOpCode(TR::ILOpCodes opCode)
    {
@@ -2385,7 +2415,7 @@ TR::InstOpCode::S390BranchCondition OMR::Z::TreeEvaluator::getBranchConditionFro
          break;
       default:
          {
-         TR_ASSERT_FATAL(0, "Unsupported compare type under ternary");
+         TR_ASSERT_FATAL(0, "Unsupported compare type under select");
          return TR::InstOpCode::COND_BE;      //not a valid return value.  We should never ever get here.
          }
          break;
@@ -2496,7 +2526,7 @@ int32_t OMR::Z::TreeEvaluator::countReferencesInTree(TR::Node *treeNode, TR::Nod
 bool
 OMR::Z::TreeEvaluator::treeContainsAllOtherUsesForNode(TR::Node *treeNode, TR::Node *node)
    {
-   static const char *x = feGetEnv("disableTernaryEvaluatorImprovement");
+   static const char *x = feGetEnv("disableSelectEvaluatorImprovement");
    if (x)
       {
       return false;
@@ -2519,7 +2549,7 @@ OMR::Z::TreeEvaluator::treeContainsAllOtherUsesForNode(TR::Node *treeNode, TR::N
    }
 
 TR::Register *
-OMR::Z::TreeEvaluator::ternaryEvaluator(TR::Node *node, TR::CodeGenerator *cg)
+OMR::Z::TreeEvaluator::selectEvaluator(TR::Node *node, TR::CodeGenerator *cg)
    {
    TR::Compilation *comp = cg->comp();
 
@@ -2529,7 +2559,7 @@ OMR::Z::TreeEvaluator::ternaryEvaluator(TR::Node *node, TR::CodeGenerator *cg)
    TR::Node *falseVal   = node->getThirdChild();
 
    if (comp->getOption(TR_TraceCG))
-      traceMsg(comp, "Starting evaluation of ternary node %p condition %p (in reg %p) trueVal %p (in reg %p) falseVal %p (in reg %p)\n",node,condition,condition->getRegister(), trueVal, trueVal->getRegister(), falseVal, falseVal->getRegister());
+      traceMsg(comp, "Starting evaluation of select node %p condition %p (in reg %p) trueVal %p (in reg %p) falseVal %p (in reg %p)\n",node,condition,condition->getRegister(), trueVal, trueVal->getRegister(), falseVal, falseVal->getRegister());
 
   TR::Register *trueReg = 0;
   if(TR::TreeEvaluator::treeContainsAllOtherUsesForNode(condition,trueVal) &&
@@ -2689,9 +2719,9 @@ OMR::Z::TreeEvaluator::ternaryEvaluator(TR::Node *node, TR::CodeGenerator *cg)
    return trueReg;
 }
 
-// Take advantage of VRF/FPR overlap and use vector compare and select instructions to implement dternary
+// Take advantage of VRF/FPR overlap and use vector compare and select instructions to implement dselect
 TR::Register *
-OMR::Z::TreeEvaluator::dternaryEvaluator(TR::Node *node, TR::CodeGenerator *cg)
+OMR::Z::TreeEvaluator::dselectEvaluator(TR::Node *node, TR::CodeGenerator *cg)
    {
    TR::Node *conditionNode = node->getFirstChild();
    TR::Node *trueValueNode = node->getSecondChild();

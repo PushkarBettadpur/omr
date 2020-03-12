@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2017, 2019 IBM Corp. and others
+# Copyright (c) 2017, 2020 IBM Corp. and others
 #
 # This program and the accompanying materials are made available under
 # the terms of the Eclipse Public License 2.0 which accompanies this
@@ -128,6 +128,7 @@ set(OMR_GC_MODRON_STANDARD ON CACHE BOOL "TODO: Document")
 set(OMR_GC_NON_ZERO_TLH ON CACHE BOOL "TODO: Document")
 set(OMR_GC_THREAD_LOCAL_HEAP ON CACHE BOOL "TODO: Document")
 set(OMR_GC_COMPRESSED_POINTERS OFF CACHE BOOL "TODO: Document")
+set(OMR_GC_FULL_POINTERS OFF CACHE BOOL "TODO: Document")
 set(OMR_GC_TLH_PREFETCH_FTA OFF CACHE BOOL "TODO: Document")
 set(OMR_GC_OBJECT_MAP OFF CACHE BOOL "TODO: Document")
 set(OMR_GC_DYNAMIC_CLASS_UNLOADING OFF CACHE BOOL "TODO: Document")
@@ -147,7 +148,6 @@ set(OMR_GC_VLHGC OFF CACHE BOOL "TODO: Document")
 set(OMR_GC_VLHGC_CONCURRENT_COPY_FORWARD OFF CACHE BOOL "Enable VLHGC concurrent copy forward")
 
 set(OMR_INTERP_HAS_SEMAPHORES ON CACHE BOOL "TODO: Document")
-set(OMR_INTERP_SMALL_MONITOR_SLOT OFF CACHE BOOL "TODO: Document")
 
 set(OMR_THR_ADAPTIVE_SPIN ON CACHE BOOL "TODO: Document")
 set(OMR_THR_JLM ON CACHE BOOL "TODO: Document")
@@ -202,6 +202,6 @@ set(OMR_NOTIFY_POLICY_CONTROL OFF CACHE BOOL "TODO: Document")
 
 set(OMR_ENV_GCC OFF CACHE BOOL "TODO: Document")
 
-set(OMR_OPT_CUDA ${CUDA_FOUND} CACHE BOOL "Enable CUDA support in OMR")
+set(OMR_OPT_CUDA OFF CACHE BOOL "Enable CUDA support in OMR. See also: OMR_CUDA_HOME in FindOmrCuda.cmake")
 
 set(OMR_SANITIZE OFF CACHE STRING "Sanitizer selection. Only has an effect on GNU or Clang")

@@ -2014,7 +2014,7 @@ OMR::Node::isThisPointer()
  *        pairFirstChild
  *        pairSecondChild
  *
- * and the opcodes for highOp/adjunctOp are lumulh/lmul, luaddh/luadd, or lusubh/lusub.
+ * and the opcodes for highOp/adjunctOp are lumulh/lmul, luaddh/ladd, or lusubh/lsub.
  */
 bool
 OMR::Node::isDualHigh()
@@ -2023,8 +2023,6 @@ OMR::Node::isDualHigh()
       {
       TR::ILOpCodes pairOpValue = self()->getChild(2)->getOpCodeValue();
       if (((self()->getOpCodeValue() == TR::lumulh) && (pairOpValue == TR::lmul))
-          || ((self()->getOpCodeValue() == TR::luaddh) && (pairOpValue == TR::luadd))
-          || ((self()->getOpCodeValue() == TR::lusubh) && (pairOpValue == TR::lusub))
           || ((self()->getOpCodeValue() == TR::luaddh) && (pairOpValue == TR::ladd))
           || ((self()->getOpCodeValue() == TR::lusubh) && (pairOpValue == TR::lsub)))
          return true;
@@ -2033,7 +2031,7 @@ OMR::Node::isDualHigh()
    }
 
 /**
- * Whether this node is high part of a ternary subtract or addition, like a dual this
+ * Whether this node is high part of a select subtract or addition, like a dual this
  * is a composite operator, made from a high order part and its adjunct operator
  * which is the first child of its third child. It returns true if the node has the form:
  *
@@ -2045,10 +2043,10 @@ OMR::Node::isDualHigh()
  *          pairFirstChild
  *          pairSecondChild
  *
- * and the opcodes for highOp/adjunctOp are luaddc/luadd, or lusubb/lusub.
+ * and the opcodes for highOp/adjunctOp are luaddc/ladd, or lsubb/lsub.
  */
 bool
-OMR::Node::isTernaryHigh()
+OMR::Node::isSelectHigh()
    {
    if (((self()->getOpCodeValue() == TR::luaddc) || (self()->getOpCodeValue() == TR::lusubb))
        && (self()->getNumChildren() == 3) && self()->getChild(2)
@@ -2057,13 +2055,21 @@ OMR::Node::isTernaryHigh()
       TR::ILOpCodes ccOpValue = self()->getChild(2)->getOpCodeValue();
       TR::ILOpCodes pairOpValue = self()->getChild(2)->getFirstChild()->getOpCodeValue();
       if ((ccOpValue == TR::computeCC) &&
-          (((self()->getOpCodeValue() == TR::luaddc) && (pairOpValue == TR::luadd))
-           || ((self()->getOpCodeValue() == TR::lusubb) && (pairOpValue == TR::lusub))
+          (((self()->getOpCodeValue() == TR::luaddc) && (pairOpValue == TR::ladd))
            || ((self()->getOpCodeValue() == TR::luaddc) && (pairOpValue == TR::ladd))
            || ((self()->getOpCodeValue() == TR::lusubb) && (pairOpValue == TR::lsub))))
          return true;
       }
    return false;
+   }
+
+/**
+ * isTernaryHigh is now deprecated. Use isSelectHigh instead.
+ */
+bool
+OMR::Node::isTernaryHigh()
+   {
+   return self()->isSelectHigh();
    }
 
 /**
@@ -2344,7 +2350,7 @@ OMR::Node::isNotCollected()
  *
  * \note
  *    This query currently only works on opcodes that can have a pinning array pointer,
- *    i.e. aiadd, aiuadd, aladd, aluadd. Suppport for other opcodes can be added if necessary.
+ *    i.e. aiadd, aladd. Suppport for other opcodes can be added if necessary.
  */
 bool
 OMR::Node::computeIsInternalPointer()
@@ -2405,20 +2411,20 @@ OMR::Node::computeIsCollectedReferenceImpl(TR::NodeChecklist &processedNodesColl
 
    // In order to prevent from walking the same node repeatedly when
    // one is referenced multiple times in a very deep tree structure
-   // (e.g. ternary whose child is a ternary and so on),
+   // (e.g. select whose child is a select and so on),
    // Use 2 checklists to record following states:
    // -- The node is not contained in either collected or uncollected checklists - first time encounter, process the node
    //    and add it to the appropriate checklist(s) based on the result.
    // -- Node is seen in both checklitsts - previously processed with result of TR_maybe
    // -- Node is seen in processedNodesCollected - previously processed with result of TR_yes
    // -- Node is seen in processedNodesNotCollected - previously processed with result of TR_no
-   bool ternarySeenCollected = processedNodesCollected.contains(receiverNode);
-   bool ternarySeenNotCollected = processedNodesNotCollected.contains(receiverNode);
-   if (ternarySeenCollected && ternarySeenNotCollected)
+   bool selectSeenCollected = processedNodesCollected.contains(receiverNode);
+   bool selectSeenNotCollected = processedNodesNotCollected.contains(receiverNode);
+   if (selectSeenCollected && selectSeenNotCollected)
       return TR_maybe;
-   else if (ternarySeenCollected)
+   else if (selectSeenCollected)
       return TR_yes;
-   else if (ternarySeenNotCollected)
+   else if (selectSeenNotCollected)
       return TR_no;
 
    while (curNode)
@@ -2444,7 +2450,7 @@ OMR::Node::computeIsCollectedReferenceImpl(TR::NodeChecklist &processedNodesColl
          continue;
          }
 
-      if (op.isTernary())
+      if (op.isSelect())
          {
          TR_YesNoMaybe secondChildResult = curNode->getSecondChild()->computeIsCollectedReferenceImpl(processedNodesCollected, processedNodesNotCollected);
          if (TR_maybe == secondChildResult)
@@ -2498,7 +2504,7 @@ OMR::Node::computeIsCollectedReferenceImpl(TR::NodeChecklist &processedNodesColl
             else
                {
                // null constant under aladd, return false.
-               // Null constant under ternary (i.e. we reached here via recursive calls), return maybe
+               // Null constant under select (i.e. we reached here via recursive calls), return maybe
                // to indicate need to check the other child.
                if (self() != curNode)
                   return recordProcessedNodeResult(receiverNode, TR_no, processedNodesCollected, processedNodesNotCollected);
@@ -3190,13 +3196,6 @@ OMR::Node::getFirstArgumentIndex()
 
    if (self()->getOpCodeValue() == TR::ZEROCHK)
       return 1; // First argument is the int to compare with zero, not an arg to the helper
-
-   // commented out because a fair amount of code has assumptions on this function returning 0 for
-   // static JNI
-   //
-   //TR::MethodSymbol * methodSymbol = getSymbol()->castToMethodSymbol();
-   //if (isPreparedForDirectJNI() && methodSymbol->isStatic())
-   //   return 1;
 
    return 0;
    }
@@ -8136,15 +8135,15 @@ OMR::Node::printCanSkipZeroInitialization()
 bool
 OMR::Node::isAdjunct()
    {
-   return (self()->getOpCodeValue() == TR::lmul || self()->getOpCodeValue() == TR::luadd || self()->getOpCodeValue() == TR::lusub 
+   return (self()->getOpCodeValue() == TR::lmul
    || self()->getOpCodeValue() == TR::ladd || self()->getOpCodeValue() == TR::lsub) && _flags.testAny(adjunct);
    }
 
 void
 OMR::Node::setIsAdjunct(bool v)
    {
-   TR_ASSERT(self()->getOpCodeValue() == TR::lmul || self()->getOpCodeValue() == TR::luadd || self()->getOpCodeValue() == TR::lusub
-   || self()->getOpCodeValue() == TR::ladd || self()->getOpCodeValue() == TR::lsub, "Opcode must be lmul, luadd, lusub, ladd or lsub");
+   TR_ASSERT(self()->getOpCodeValue() == TR::lmul
+   || self()->getOpCodeValue() == TR::ladd || self()->getOpCodeValue() == TR::lsub, "Opcode must be lmul, ladd or lsub");
    _flags.set(adjunct, v);
    }
 

@@ -228,10 +228,10 @@ public:
    bool isRotate()                   const { return properties2().testAny(ILProp2::LeftRotate); }
    bool isUnsignedCompare()          const { return properties2().testAny(ILProp2::UnsignedCompare); }
    bool isOverflowCompare()          const { return properties2().testAny(ILProp2::OverflowCompare); }
-   bool isTernary()                  const { return properties2().testAny(ILProp2::Ternary); }
-   bool isTernaryAdd()               const { return properties2().testAny(ILProp2::TernaryAdd); }
-   bool isTernarySub()               const { return properties2().testAny(ILProp2::TernarySub); }
-   bool isArithmetic()               const { return isAdd() || isSub() || isMul() || isDiv() || isRem() || isLeftShift() || isRightShift() || isShiftLogical() || isAnd() || isXor() || isOr() || isNeg() || isTernaryAdd() || isTernarySub(); }
+   bool isSelect()                   const { return properties2().testAny(ILProp2::Select); }
+   bool isSelectAdd()                const { return properties2().testAny(ILProp2::SelectAdd); }
+   bool isSelectSub()                const { return properties2().testAny(ILProp2::SelectSub); }
+   bool isArithmetic()               const { return isAdd() || isSub() || isMul() || isDiv() || isRem() || isLeftShift() || isRightShift() || isShiftLogical() || isAnd() || isXor() || isOr() || isNeg() || isSelectAdd() || isSelectSub(); }
    bool isCondCodeComputation()      const { return properties2().testAny(ILProp2::CondCodeComputation); }
    bool isJumpWithMultipleTargets()  const { return properties2().testAny(ILProp2::JumpWithMultipleTargets); }  // Transactional Memory uses this
    bool isLoadAddr()                 const { return properties2().testAny(ILProp2::LoadAddress); }
@@ -279,9 +279,7 @@ public:
    bool hasPinningArrayPointer()
       {
       return (getOpCodeValue() == TR::aiadd)  ||
-             (getOpCodeValue() == TR::aladd)  ||
-             (getOpCodeValue() == TR::aiuadd) ||
-             (getOpCodeValue() == TR::aluadd);
+             (getOpCodeValue() == TR::aladd);
       }
 
    bool isLongCompare() const
@@ -356,20 +354,14 @@ public:
              getOpCodeValue() == TR::iflucmpgt ||
              getOpCodeValue() == TR::iadd      ||
              getOpCodeValue() == TR::ladd      ||
-             getOpCodeValue() == TR::iuadd     ||
              getOpCodeValue() == TR::iuaddc    ||
              getOpCodeValue() == TR::aiadd     ||
-             getOpCodeValue() == TR::aiuadd    ||
-             getOpCodeValue() == TR::luadd     ||
              getOpCodeValue() == TR::luaddc    ||
              getOpCodeValue() == TR::aladd     ||
-             getOpCodeValue() == TR::aluadd    ||
              getOpCodeValue() == TR::isub      ||
              getOpCodeValue() == TR::lsub      ||
-             getOpCodeValue() == TR::iusub     ||
              getOpCodeValue() == TR::iusubb    ||
              getOpCodeValue() == TR::asub      ||
-             getOpCodeValue() == TR::lusub     ||
              getOpCodeValue() == TR::lusubb;
       }
 
@@ -907,7 +899,6 @@ public:
       switch (longOp)
          {
          case TR::ladd:   return TR::iadd;
-         case TR::luadd:  return TR::iadd;
          case TR::lsub:   return TR::isub;
          case TR::lmul:   return TR::imul;
          case TR::ldiv:   return TR::idiv;
@@ -1125,15 +1116,15 @@ public:
       return TR::BadILOp;
       }
 
-   static TR::ILOpCodes ternaryOpCode(TR::DataType type)
+   static TR::ILOpCodes selectOpCode(TR::DataType type)
       {
       switch(type)
          {
-         case TR::Int8:     return TR::bternary;
-         case TR::Int16:    return TR::sternary;
-         case TR::Int32:    return TR::iternary;
-         case TR::Int64:    return TR::lternary;
-         case TR::Address:  return TR::aternary;
+         case TR::Int8:     return TR::bselect;
+         case TR::Int16:    return TR::sselect;
+         case TR::Int32:    return TR::iselect;
+         case TR::Int64:    return TR::lselect;
+         case TR::Address:  return TR::aselect;
          default: return TR::BadILOp;
          }
       }
@@ -1294,7 +1285,6 @@ public:
          case TR::dstorei:
             return TR::vstorei;
          case TR::badd:
-         case TR::cadd:
          case TR::sadd:
          case TR::iadd:
          case TR::ladd:
@@ -1302,7 +1292,6 @@ public:
          case TR::dadd:
             return TR::vadd;
          case TR::bsub:
-         case TR::csub:
          case TR::ssub:
          case TR::isub:
          case TR::lsub:

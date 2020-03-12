@@ -1675,7 +1675,6 @@ static bool reduceLongOp(TR::Node * node, TR::Block * block, TR::Simplifier * s,
             }
       break;
       case TR::lneg:
-      case TR::luneg:
          {
          if (!performTransformation(s->comp(), "%sReducing long operation in node [" POINTER_PRINTF_FORMAT "] to an int operation\n", s->optDetailString(), node))
             return false;
@@ -15446,10 +15445,10 @@ TR::Node *endBlockSimplifier(TR::Node * node, TR::Block * block, TR::Simplifier 
    }
 
 //---------------------------------------------------------------------
-// Ternary
+// Select
 //
 
-TR::Node *ternarySimplifier(TR::Node * node, TR::Block * block, TR::Simplifier * s)
+TR::Node *selectSimplifier(TR::Node * node, TR::Block * block, TR::Simplifier * s)
    {
    simplifyChildren(node, block, s);
 

@@ -514,11 +514,11 @@ public:
    ///         pairFirstChild
    ///         pairSecondChild
    ///
-   /// and the opcodes for highOp/adjunctOp are lumulh/lmul, luaddh/luadd, or lusubh/lusub.
+   /// and the opcodes for highOp/adjunctOp are lumulh/lmul, luaddh/ladd, or lusubh/lsub.
    ///
    bool                   isDualHigh();
 
-   /// Whether this node is high part of a ternary subtract or addition, like a dual this
+   /// Whether this node is high part of a select subtract or addition, like a dual this
    /// is a composite operator, made from a high order part and its adjunct operator
    /// which is the first child of its third child. It returns true if the node has the form:
    ///
@@ -530,10 +530,14 @@ public:
    ///           pairFirstChild
    ///           pairSecondChild
    ///
-   /// and the opcodes for highOp/adjunctOp are luaddc/luadd, or lusubb/lusub.
+   /// and the opcodes for highOp/adjunctOp are luaddc/ladd, or lusubb/lsub.
+   ///
+   bool                   isSelectHigh();
+
+   /// isTernaryHigh is now deprecated. Use isSelectHigh instead.
    ///
    bool                   isTernaryHigh();
-
+   
    /// Whether this node is the high or low part of a "dual", in cyclic representation.
    /// ie it represents a composite operator, together with its pair.
    /// The node and its pair have each other as its third child, completing the cycle.
@@ -2143,7 +2147,7 @@ protected:
       allocationCanBeRemoved                = 0x00004000,
       skipZeroInit                          = 0x00008000,
 
-      // Flag used by TR::lmul (possibly TR::luadd, TR::lusub)
+      // Flag used by TR::lmul
       // Whether this node is the adjunct node of a dual high node
       adjunct                               = 0x00010000,
 

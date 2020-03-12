@@ -22,7 +22,11 @@
 
 include(OmrFindFiles)
 
-if (OMR_HOST_OS STREQUAL "zos")
+if(OMR_OPT_CUDA)
+	find_package(OmrCuda REQUIRED)
+endif()
+
+if(OMR_HOST_OS STREQUAL "zos")
 	include(OmrMetalC)
 endif()
 
@@ -44,10 +48,10 @@ target_include_directories(omrport_obj
 		$<TARGET_PROPERTY:omr_base,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
-if (OMR_OPT_CUDA)
+if(OMR_OPT_CUDA)
 	target_include_directories(omrport_obj
 		PRIVATE
-			${CUDA_INCLUDE_DIRS}
+			${OmrCuda_INCLUDE_DIRS}
 	)
 endif()
 
@@ -440,23 +444,21 @@ target_link_libraries(omrport
 		j9hashtable
 		j9pool
 		${OMR_THREAD_LIB}
+		${CMAKE_DL_LIBS}
 )
 
-if(OMR_HOST_OS STREQUAL "linux")
-    target_link_libraries(omrport PRIVATE rt)
+if(OMRPORT_OMRSIG_SUPPORT)
+	target_link_libraries(omrport PRIVATE omrsig)
 endif()
 
-#TODO hack to get to compile. Need platform checks
-if(NOT OMR_HOST_OS STREQUAL "win")
-	if(NOT OMR_HOST_OS STREQUAL "zos")
-		target_link_libraries(omrport PRIVATE dl)
-	endif()
+if(OMR_OS_LINUX)
+	target_link_libraries(omrport PRIVATE rt)
 endif()
 
-if(OMR_HOST_OS STREQUAL "osx")
+if(OMR_OS_OSX)
 	target_link_libraries(omrport PRIVATE iconv)
 endif()
 
-if(OMR_HOST_OS STREQUAL "win")
+if(OMR_OS_WINDOWS)
 	target_link_libraries(omrport PRIVATE psapi pdh)
 endif()

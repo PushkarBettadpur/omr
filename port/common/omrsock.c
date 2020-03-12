@@ -85,7 +85,9 @@ omrsock_getaddrinfo_create_hints(struct OMRPortLibrary *portLibrary, omrsock_add
  * @ref omrsock_getaddrinfo_create_hints to create the hints.
  * @param[out] result An opaque pointer to a list of results (OMRAddrInfoNode must be preallocated).
  *
- * @return 0, if no errors occurred, otherwise return an error.
+ * @return 0, if no errors occurred, otherwise return an error. Error code values returned are
+ * \arg OMRPORT_ERROR_INVALID_ARGUMENTS when hints or result arguments are invalid.
+ * \arg OMRPORT_ERROR_SOCK_ADDRINFO_FAILED when system addrinfo fails.
  *
  * @note Must free the "result" structure with @ref omrsock_freeaddrinfo to free up memory.
  */
@@ -102,10 +104,11 @@ omrsock_getaddrinfo(struct OMRPortLibrary *portLibrary, char *node, char *servic
  * @param[in] handle The result structure returned by @ref omrsock_getaddrinfo.
  * @param[out] length The number of results.
  *
- * @return 0, if no errors occurred, otherwise return an error.
+ * @return 0, if no errors occurred, otherwise return an error. Error code values returned are
+ * \arg OMRPORT_ERROR_INVALID_ARGUMENTS when handle or index arguments are invalid.
  */
 int32_t
-omrsock_getaddrinfo_length(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t hints, uint32_t *length)
+omrsock_getaddrinfo_length(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, uint32_t *length)
 {
 	return OMRPORT_ERROR_NOT_SUPPORTED_ON_THIS_PLATFORM;
 }
@@ -119,10 +122,11 @@ omrsock_getaddrinfo_length(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_
  * @param[out] family The family at "index".
  * @param[in] index The index into the structure returned by @ref omrsock_getaddrinfo.
  *
- * @return 0, if no errors occurred, otherwise return an error.
+ * @return 0, if no errors occurred, otherwise return an error. Error code values returned are
+ * \arg OMRPORT_ERROR_INVALID_ARGUMENTS when handle or index arguments are invalid.
  */
 int32_t
-omrsock_getaddrinfo_family(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *family, int32_t index)
+omrsock_getaddrinfo_family(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *family, uint32_t index)
 {
 	return OMRPORT_ERROR_NOT_SUPPORTED_ON_THIS_PLATFORM;
 }
@@ -136,10 +140,11 @@ omrsock_getaddrinfo_family(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_
  * @param[out] socktype The socket type at "index".
  * @param[in] index The index into the structure returned by @ref omrsock_getaddrinfo.
  *
- * @return 0, if no errors occurred, otherwise return an error.
+ * @return 0, if no errors occurred, otherwise return an error. Error code values returned are
+ * \arg OMRPORT_ERROR_INVALID_ARGUMENTS when handle or index arguments are invalid.
  */
 int32_t
-omrsock_getaddrinfo_socktype(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *socktype, int32_t index)
+omrsock_getaddrinfo_socktype(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *socktype, uint32_t index)
 {
 	return OMRPORT_ERROR_NOT_SUPPORTED_ON_THIS_PLATFORM;
 }
@@ -153,10 +158,11 @@ omrsock_getaddrinfo_socktype(struct OMRPortLibrary *portLibrary, omrsock_addrinf
  * @param[out] protocol The protocol family at "index".
  * @param[in] index The index into the structure returned by @ref omrsock_getaddrinfo.
  *
- * @return 0, if no errors occurred, otherwise return an error.
+ * @return 0, if no errors occurred, otherwise return an error. Error code values returned are
+ * \arg OMRPORT_ERROR_INVALID_ARGUMENTS when handle or index arguments are invalid.
  */
 int32_t
-omrsock_getaddrinfo_protocol(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *protocol, int32_t index)
+omrsock_getaddrinfo_protocol(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *protocol, uint32_t index)
 {
 	return OMRPORT_ERROR_NOT_SUPPORTED_ON_THIS_PLATFORM;
 }
@@ -167,7 +173,8 @@ omrsock_getaddrinfo_protocol(struct OMRPortLibrary *portLibrary, omrsock_addrinf
  * @param[in] portLibrary The port library.
  * @param[in] handle Pointer to results returned by @ref omrsock_getaddrinfo.
  *
- * @return 0, if no errors occurred, otherwise return an error.
+ * @return 0, if no errors occurred, otherwise return an error. Error code values returned are
+ * \arg OMRPORT_ERROR_INVALID_ARGUMENTS when handle argument is invalid.
  */
 int32_t
 omrsock_freeaddrinfo(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle)

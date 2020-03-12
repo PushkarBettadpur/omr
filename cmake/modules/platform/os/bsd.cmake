@@ -1,5 +1,5 @@
 ###############################################################################
-# Copyright (c) 2017, 2020 IBM Corp. and others
+# Copyright (c) 2020, 2020 IBM Corp. and others
 #
 # This program and the accompanying materials are made available under
 # the terms of the Eclipse Public License 2.0 which accompanies this
@@ -17,21 +17,8 @@
 # [2] http://openjdk.java.net/legal/assembly-exception.html
 #
 # SPDX-License-Identifier: EPL-2.0 OR Apache-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 OR LicenseRef-GPL-2.0 WITH Assembly-exception
-###############################################################################
+#############################################################################
 
-set(OMR_COMPILER ON CACHE BOOL "")
-set(OMR_DDR ON CACHE BOOL "")
-set(OMR_JITBUILDER ON CACHE BOOL "")
-set(OMR_JITBUILDER_TEST OFF CACHE BOOL "")
-
-set(OMR_GC_SEGREGATED_HEAP ON CACHE BOOL "")
-set(OMR_GC_MODRON_SCAVENGER ON CACHE BOOL "")
-set(OMR_GC_MODRON_CONCURRENT_MARK ON CACHE BOOL "")
-
-set(OMR_NOTIFY_POLICY_CONTROL ON CACHE BOOL "")
-set(OMR_THR_CUSTOM_SPIN_OPTIONS ON CACHE BOOL "")
-set(OMR_THR_SPIN_WAKE_CONTROL ON CACHE BOOL "")
-set(OMR_THR_THREE_TIER_LOCKING ON CACHE BOOL "")
-set(OMR_GC_FULL_POINTERS ON CACHE BOOL "")
-
-set(OMR_PORT_SOCKET_SUPPORT ON CACHE BOOL "")
+set(OMR_PLATFORM_DEFINITIONS
+	-DOMR_OS_BSD
+)

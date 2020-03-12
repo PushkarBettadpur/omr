@@ -942,7 +942,7 @@ enum TR_CompilationOptions
    TR_IncreaseCountsForNonBootstrapMethods            = 0x00080000 + 29,
    TR_ReduceCountsForMethodsCompiledDuringStartup     = 0x00100000 + 29,
    TR_IncreaseCountsForMethodsCompiledOutsideStartup  = 0x00200000 + 29,
-   // Available                                       = 0x00400000 + 29,
+   TR_ForceGenerateReadOnlyCode                       = 0x00400000 + 29,
    TR_UseGlueIfMethodTrampolinesAreNotNeeded          = 0x00800000 + 29,
    TR_EnableFpreductionAnnotation                     = 0x01000000 + 29,
    TR_ExtractExitsByInvalidatingStructure             = 0x02000000 + 29,
@@ -1049,14 +1049,14 @@ enum TR_CompilationOptions
    //
    TR_TraceLRAResults                   = 0x00000800,
    // Available                         = 0x00001000,
-  
+
    // Register ITF tracing option word
-  
+
    // Available                         = 0x00008000,
    // Available                         = 0x00010000,
    // Available                         = 0x00020000,
    // Available                         = 0x00040000,
-  
+
    // Register Spill Costs Analysis tracing option word
    //
    TR_TraceSpillCostsBasic              = TR_TraceGRABasic,
@@ -1191,6 +1191,10 @@ enum TR_ProcessOptionsFlags
 #define TR_DEFAULT_INITIAL_COUNT         3000
 #define TR_DEFAULT_INITIAL_BCOUNT        3000
 #define TR_DEFAULT_INITIAL_MILCOUNT       250
+
+#define TR_LARGE_SMP_INITIAL_COUNT       2000
+#define TR_LARGE_SMP_INITIAL_BCOUNT      1000
+#define TR_NUMPROC_FOR_LARGE_SMP            4 // Minimum number of CPUs to declare this environment as a "large SMP"
 
 #define TR_QUICKSTART_INITIAL_COUNT      1000
 #define TR_QUICKSTART_INITIAL_BCOUNT      250

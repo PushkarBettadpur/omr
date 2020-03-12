@@ -53,9 +53,9 @@
 #include "omrgcconsts.h"
 #endif /* defined(OMRZTPF) */
 
-#if (defined(LINUX) || defined(RS6000) || defined (OSX))
+#if !defined(OMR_OS_WINDOWS)
 #include <unistd.h>
-#endif /* (defined(LINUX) || defined(RS6000) || defined (OSX)) */
+#endif /* !defined(OMR_OS_WINDOWS) */
 
 #if defined(J9ZOS390)
 #define PORT_ABEND_CODE	0xDED
@@ -212,8 +212,9 @@
 #define OMRPORT_VMEM_PAGE_FLAG_FIXED 0x2
 #define OMRPORT_VMEM_PAGE_FLAG_PAGEABLE 0x4
 #define OMRPORT_VMEM_PAGE_FLAG_SUPERPAGE_ANY 0x8
+#define OMRPORT_VMEM_PAGE_FLAG_PAGEABLE_PREFERABLE 0x10
 
-#define OMRPORT_VMEM_PAGE_FLAG_TYPE_MASK 0xF
+#define OMRPORT_VMEM_PAGE_FLAG_TYPE_MASK 0x1F
 /** @} */
 
 /**
@@ -761,8 +762,51 @@ typedef struct J9ProcessorInfos {
 #define OMRPORT_SIG_FLAG_IS_SYNC                ((uint32_t)0x08)
 #define OMRPORT_SIG_FLAG_CONTROL_BITS_MASK      ((uint32_t)0x0F)
 
-#if defined(OSX) || defined(LINUX) && !defined(_TPF_SOURCE) || defined(AIXPPC) || defined(J9ZOS390)
-/* The below macros support the unix/omrsignal.c implementation, which is used on OSX, Linux, AIX and zOS. */
+
+#if defined(OMR_OS_WINDOWS) || defined(OMRZTPF)
+/* The below macros support the [win32|win64amd|ztpf]/omrsignal.c implementations, which are used on Windows and z/TPF. */
+
+#define OMRPORT_SIG_SMALLEST_SIGNAL_FLAG         0x4
+#define OMRPORT_SIG_FLAG_SIGSEGV                 0x4
+#define OMRPORT_SIG_FLAG_SIGBUS                  0x8
+#define OMRPORT_SIG_FLAG_SIGILL                  0x10
+#define OMRPORT_SIG_FLAG_SIGFPE                  0x20
+#define OMRPORT_SIG_FLAG_SIGTRAP                 0x40
+#define OMRPORT_SIG_FLAG_SIGABEND                0x80
+#define OMRPORT_SIG_FLAG_SIGPIPE                 0x100
+#define OMRPORT_SIG_FLAG_SIGALRM                 0x200
+#define OMRPORT_SIG_FLAG_SIGQUIT                 0x400
+#define OMRPORT_SIG_FLAG_SIGABRT                 0x800
+#define OMRPORT_SIG_FLAG_SIGTERM                 0x1000
+#define OMRPORT_SIG_FLAG_SIGRECONFIG             0x2000
+#define OMRPORT_SIG_FLAG_SIGINT                  0x4000
+#define OMRPORT_SIG_FLAG_SIGXFSZ                 0x8000
+#define OMRPORT_SIG_FLAG_SIGCHLD                 0x10000
+#define OMRPORT_SIG_FLAG_SIGTSTP                 0x20000
+#define OMRPORT_SIG_FLAG_SIGFPE_DIV_BY_ZERO      (OMRPORT_SIG_FLAG_SIGFPE | 0x40000)
+#define OMRPORT_SIG_FLAG_SIGFPE_INT_DIV_BY_ZERO  (OMRPORT_SIG_FLAG_SIGFPE | 0x80000)
+#define OMRPORT_SIG_FLAG_SIGFPE_INT_OVERFLOW     (OMRPORT_SIG_FLAG_SIGFPE | 0x100000)
+#define OMRPORT_SIG_FLAG_SIGIO                   0x200000
+#define OMRPORT_SIG_FLAG_SIGHUP                  0x400000
+#define OMRPORT_SIG_FLAG_SIGCONT                 0x800000
+#define OMRPORT_SIG_FLAG_SIGWINCH                0x1000000
+#define OMRPORT_SIG_FLAG_SIGUSR1                 0x2000000
+#define OMRPORT_SIG_FLAG_SIGUSR2                 0x4000000
+#define OMRPORT_SIG_FLAG_SIGURG                  0x8000000
+#define OMRPORT_SIG_FLAG_SIGXCPU                 0x10000000
+#define OMRPORT_SIG_FLAG_SIGVTALRM               0x20000000
+#define OMRPORT_SIG_FLAG_SIGPROF                 0x40000000
+#define OMRPORT_SIG_FLAG_SIGSYS                  0x80000000
+
+#define OMRPORT_SIG_FLAG_SIGALLASYNC \
+	( OMRPORT_SIG_FLAG_SIGQUIT  | OMRPORT_SIG_FLAG_SIGABRT   | OMRPORT_SIG_FLAG_SIGTERM | OMRPORT_SIG_FLAG_SIGRECONFIG \
+	| OMRPORT_SIG_FLAG_SIGXFSZ  | OMRPORT_SIG_FLAG_SIGINT    | OMRPORT_SIG_FLAG_SIGHUP  | OMRPORT_SIG_FLAG_SIGCONT \
+	| OMRPORT_SIG_FLAG_SIGWINCH | OMRPORT_SIG_FLAG_SIGPIPE   | OMRPORT_SIG_FLAG_SIGALRM | OMRPORT_SIG_FLAG_SIGCHLD \
+	| OMRPORT_SIG_FLAG_SIGTSTP  | OMRPORT_SIG_FLAG_SIGUSR1   | OMRPORT_SIG_FLAG_SIGUSR2 | OMRPORT_SIG_FLAG_SIGURG \
+	| OMRPORT_SIG_FLAG_SIGXCPU  | OMRPORT_SIG_FLAG_SIGVTALRM | OMRPORT_SIG_FLAG_SIGPROF | OMRPORT_SIG_FLAG_SIGIO \
+	| OMRPORT_SIG_FLAG_SIGSYS )
+#else /* defined(OMR_OS_WINDOWS) || defined(OMRZTPF) */
+/* The below macros support the unix/omrsignal.c implementation, used everywhere but windows and z/TPF. */
 
 /* All signal codes include exactly one of OMRPORT_SIG_FLAG_IS_SYNC or OMRPORT_SIG_FLAG_IS_ASYNC
  * plus a multiple of this.
@@ -823,49 +867,7 @@ typedef struct J9ProcessorInfos {
 	| OMRPORT_SIG_FLAG_SIGXCPU     | OMRPORT_SIG_FLAG_SIGVTALRM | OMRPORT_SIG_FLAG_SIGPROF | OMRPORT_SIG_FLAG_SIGPIPE \
 	| OMRPORT_SIG_FLAG_SIGSYS      | OMRPORT_SIG_FLAG_SIGTTIN   | OMRPORT_SIG_FLAG_SIGTTOU | OMRPORT_SIG_FLAG_SIGINFO \
 	| OMRPORT_SIG_FLAG_SIGIOT      | OMRPORT_SIG_FLAG_SIGPOLL)
-#else /* defined(OSX) || defined(LINUX) && !defined(_TPF_SOURCE) || defined(AIXPPC) || defined(J9ZOS390) */
-/* The below macros support the [win32|win64amd|ztpf]/omrsignal.c implementations, which are used on Windows and z/TPF. */
-
-#define OMRPORT_SIG_SMALLEST_SIGNAL_FLAG         0x4
-#define OMRPORT_SIG_FLAG_SIGSEGV                 0x4
-#define OMRPORT_SIG_FLAG_SIGBUS                  0x8
-#define OMRPORT_SIG_FLAG_SIGILL                  0x10
-#define OMRPORT_SIG_FLAG_SIGFPE                  0x20
-#define OMRPORT_SIG_FLAG_SIGTRAP                 0x40
-#define OMRPORT_SIG_FLAG_SIGABEND                0x80
-#define OMRPORT_SIG_FLAG_SIGPIPE                 0x100
-#define OMRPORT_SIG_FLAG_SIGALRM                 0x200
-#define OMRPORT_SIG_FLAG_SIGQUIT                 0x400
-#define OMRPORT_SIG_FLAG_SIGABRT                 0x800
-#define OMRPORT_SIG_FLAG_SIGTERM                 0x1000
-#define OMRPORT_SIG_FLAG_SIGRECONFIG             0x2000
-#define OMRPORT_SIG_FLAG_SIGINT                  0x4000
-#define OMRPORT_SIG_FLAG_SIGXFSZ                 0x8000
-#define OMRPORT_SIG_FLAG_SIGCHLD                 0x10000
-#define OMRPORT_SIG_FLAG_SIGTSTP                 0x20000
-#define OMRPORT_SIG_FLAG_SIGFPE_DIV_BY_ZERO      (OMRPORT_SIG_FLAG_SIGFPE | 0x40000)
-#define OMRPORT_SIG_FLAG_SIGFPE_INT_DIV_BY_ZERO  (OMRPORT_SIG_FLAG_SIGFPE | 0x80000)
-#define OMRPORT_SIG_FLAG_SIGFPE_INT_OVERFLOW     (OMRPORT_SIG_FLAG_SIGFPE | 0x100000)
-#define OMRPORT_SIG_FLAG_SIGIO                   0x200000
-#define OMRPORT_SIG_FLAG_SIGHUP                  0x400000
-#define OMRPORT_SIG_FLAG_SIGCONT                 0x800000
-#define OMRPORT_SIG_FLAG_SIGWINCH                0x1000000
-#define OMRPORT_SIG_FLAG_SIGUSR1                 0x2000000
-#define OMRPORT_SIG_FLAG_SIGUSR2                 0x4000000
-#define OMRPORT_SIG_FLAG_SIGURG                  0x8000000
-#define OMRPORT_SIG_FLAG_SIGXCPU                 0x10000000
-#define OMRPORT_SIG_FLAG_SIGVTALRM               0x20000000
-#define OMRPORT_SIG_FLAG_SIGPROF                 0x40000000
-#define OMRPORT_SIG_FLAG_SIGSYS                  0x80000000
-
-#define OMRPORT_SIG_FLAG_SIGALLASYNC \
-	( OMRPORT_SIG_FLAG_SIGQUIT  | OMRPORT_SIG_FLAG_SIGABRT   | OMRPORT_SIG_FLAG_SIGTERM | OMRPORT_SIG_FLAG_SIGRECONFIG \
-	| OMRPORT_SIG_FLAG_SIGXFSZ  | OMRPORT_SIG_FLAG_SIGINT    | OMRPORT_SIG_FLAG_SIGHUP  | OMRPORT_SIG_FLAG_SIGCONT \
-	| OMRPORT_SIG_FLAG_SIGWINCH | OMRPORT_SIG_FLAG_SIGPIPE   | OMRPORT_SIG_FLAG_SIGALRM | OMRPORT_SIG_FLAG_SIGCHLD \
-	| OMRPORT_SIG_FLAG_SIGTSTP  | OMRPORT_SIG_FLAG_SIGUSR1   | OMRPORT_SIG_FLAG_SIGUSR2 | OMRPORT_SIG_FLAG_SIGURG \
-	| OMRPORT_SIG_FLAG_SIGXCPU  | OMRPORT_SIG_FLAG_SIGVTALRM | OMRPORT_SIG_FLAG_SIGPROF | OMRPORT_SIG_FLAG_SIGIO \
-	| OMRPORT_SIG_FLAG_SIGSYS )
-#endif /* defined(OSX) || defined(LINUX) && !defined(_TPF_SOURCE) || defined(AIXPPC) || defined(J9ZOS390) */
+#endif /* defined(OMR_OS_WINDOWS) || defined(OMRZTPF) */
 
 #if defined(J9ZOS390)
 #define OMRPORT_SIG_FLAG_SIGALLSYNC \
@@ -992,6 +994,7 @@ typedef struct J9ProcessorInfos {
 #define OMRPORT_VMEM_RESERVE_USED_J9ALLOCATE_4K_PAGES_ABOVE_BAR 9
 #define OMRPORT_VMEM_RESERVE_USED_J9ALLOCATE_4K_PAGES_BELOW_BAR 10
 #define OMRPORT_VMEM_RESERVE_USED_MOSERVICES 11
+#define OMRPORT_VMEM_RESERVE_USED_MMAP_SHM 12
 
 #define OMRPORT_ENSURE_CAPACITY_FAILED  0
 #define OMRPORT_ENSURE_CAPACITY_SUCCESS  1
@@ -1171,42 +1174,91 @@ typedef struct OMROSKernelInfo {
 typedef enum OMRProcessorArchitecture {
 
 	OMR_PROCESSOR_UNDEFINED,
+	OMR_PROCESSOR_FIRST,
 
-	OMR_PROCESSOR_S390_UNKNOWN,
+	// 390 Processors
+	OMR_PROCESSOR_S390_FIRST = OMR_PROCESSOR_FIRST,
+	OMR_PROCESSOR_S390_UNKNOWN = OMR_PROCESSOR_S390_FIRST,
 	OMR_PROCESSOR_S390_GP6,
+	OMR_PROCESSOR_S390_Z10 = OMR_PROCESSOR_S390_GP6,
 	OMR_PROCESSOR_S390_GP7,
 	OMR_PROCESSOR_S390_GP8,
 	OMR_PROCESSOR_S390_GP9,
+	OMR_PROCESSOR_S390_Z196 = OMR_PROCESSOR_S390_GP9,
 	OMR_PROCESSOR_S390_GP10,
+	OMR_PROCESSOR_S390_ZEC12 = OMR_PROCESSOR_S390_GP10,
 	OMR_PROCESSOR_S390_GP11,
+	OMR_PROCESSOR_S390_Z13 = OMR_PROCESSOR_S390_GP11,
 	OMR_PROCESSOR_S390_GP12,
+	OMR_PROCESSOR_S390_Z14 = OMR_PROCESSOR_S390_GP12,
 	OMR_PROCESSOR_S390_GP13,
+	OMR_PROCESSOR_S390_Z15 = OMR_PROCESSOR_S390_GP13,
 	OMR_PROCESSOR_S390_GP14,
+	OMR_PROCESSOR_S390_ZNEXT = OMR_PROCESSOR_S390_GP14,
+	OMR_PROCESSOR_S390_LAST = OMR_PROCESSOR_S390_GP14,
 
-	OMR_PROCESSOR_PPC_UNKNOWN,
-	OMR_PROCESSOR_PPC_7XX,
-	OMR_PROCESSOR_PPC_GP,
-	OMR_PROCESSOR_PPC_GR,
-	OMR_PROCESSOR_PPC_NSTAR,
-	OMR_PROCESSOR_PPC_PULSAR,
+	// ARM Processors
+	OMR_PROCESSOR_ARM_FIRST,
+	OMR_PROCESSOR_ARM_UNKNOWN = OMR_PROCESSOR_ARM_FIRST,
+	OMR_PROCESSOR_ARM_V6,
+	OMR_PROCESSOR_ARM_V7,
+	OMR_PROCESSOR_ARM_LAST = OMR_PROCESSOR_ARM_V7,
+
+	// ARM64 / AARCH64 Processors
+	OMR_PROCESSOR_ARM64_FISRT,
+	OMR_PROCESSOR_ARM64_UNKNOWN = OMR_PROCESSOR_ARM64_FISRT,
+	OMR_PROCESSOR_ARM64_V8_A,
+	OMR_PROCESSOR_ARM64_LAST = OMR_PROCESSOR_ARM64_V8_A,
+
+	// PPC Processors
+	OMR_PROCESSOR_PPC_FIRST,
+	OMR_PROCESSOR_PPC_UNKNOWN = OMR_PROCESSOR_PPC_FIRST,
+	OMR_PROCESSOR_PPC_RIOS1,
 	OMR_PROCESSOR_PPC_PWR403,
 	OMR_PROCESSOR_PPC_PWR405,
 	OMR_PROCESSOR_PPC_PWR440,
 	OMR_PROCESSOR_PPC_PWR601,
 	OMR_PROCESSOR_PPC_PWR602,
 	OMR_PROCESSOR_PPC_PWR603,
+	OMR_PROCESSOR_PPC_82XX,
+	OMR_PROCESSOR_PPC_7XX,
 	OMR_PROCESSOR_PPC_PWR604,
-	OMR_PROCESSOR_PPC_PWR620,
+	// The following processors support SQRT in hardware
+	OMR_PROCESSOR_PPC_HW_SQRT_FIRST,
+	OMR_PROCESSOR_PPC_RIOS2 = OMR_PROCESSOR_PPC_HW_SQRT_FIRST,
+	OMR_PROCESSOR_PPC_PWR2S,
+	// The following processors are 64-bit implementations
+	OMR_PROCESSOR_PPC_64BIT_FIRST,
+	OMR_PROCESSOR_PPC_PWR620 = OMR_PROCESSOR_PPC_64BIT_FIRST,
 	OMR_PROCESSOR_PPC_PWR630,
-	OMR_PROCESSOR_PPC_RIOS1,
-	OMR_PROCESSOR_PPC_RIOS2,
-	OMR_PROCESSOR_PPC_P6,
-	OMR_PROCESSOR_PPC_P7,
+	OMR_PROCESSOR_PPC_NSTAR,
+	OMR_PROCESSOR_PPC_PULSAR,
+	// The following processors support the PowerPC AS architecture
+	// PPC AS includes the new branch hint 'a' and 't' bits
+	OMR_PROCESSOR_PPC_AS_FIRST,
+	OMR_PROCESSOR_PPC_GP = OMR_PROCESSOR_PPC_AS_FIRST,
+	OMR_PROCESSOR_PPC_GR,
+	// The following processors support VMX
+	OMR_PROCESSOR_PPC_VMX_FIRST,
+	OMR_PROCESSOR_PPC_GPUL = OMR_PROCESSOR_PPC_VMX_FIRST,
+	OMR_PROCESSOR_PPC_HW_ROUND_FIRST,
+	OMR_PROCESSOR_PPC_HW_COPY_SIGN_FIRST = OMR_PROCESSOR_PPC_HW_ROUND_FIRST,
+	OMR_PROCESSOR_PPC_P6 = OMR_PROCESSOR_PPC_HW_COPY_SIGN_FIRST,
+	OMR_PROCESOSR_PPC_ATLAS,
+	OMR_PROCESSOR_PPC_BALANCED,
+	OMR_PROCESSOR_PPC_CELLPX,
+	// The following processors support VSX
+	OMR_PROCESSOR_PPC_VSX_FIRST,
+	OMR_PROCESSOR_PPC_P7 = OMR_PROCESSOR_PPC_VSX_FIRST,
 	OMR_PROCESSOR_PPC_P8,
 	OMR_PROCESSOR_PPC_P9,
+	OMR_PROCESSOR_PPC_LAST = OMR_PROCESSOR_PPC_P9,
 
-	OMR_PROCESSOR_X86_UNKNOWN,
-	OMR_PROCESSOR_X86_INTELPENTIUM,
+	// X86 Processors
+	OMR_PROCESSOR_X86_FIRST,
+	OMR_PROCESSOR_X86_UNKNOWN = OMR_PROCESSOR_X86_FIRST,
+	OMR_PROCESSOR_X86_INTEL_FIRST,
+	OMR_PROCESSOR_X86_INTELPENTIUM = OMR_PROCESSOR_X86_INTEL_FIRST,
 	OMR_PROCESSOR_X86_INTELP6,
 	OMR_PROCESSOR_X86_INTELPENTIUM4,
 	OMR_PROCESSOR_X86_INTELCORE2,
@@ -1214,11 +1266,19 @@ typedef enum OMRProcessorArchitecture {
 	OMR_PROCESSOR_X86_INTELNEHALEM,
 	OMR_PROCESSOR_X86_INTELWESTMERE,
 	OMR_PROCESSOR_X86_INTELSANDYBRIDGE,
+	OMR_PROCESSOR_X86_INTELIVYBRIDGE,
 	OMR_PROCESSOR_X86_INTELHASWELL,
-	OMR_PROCESSOR_X86_AMDK5,
+	OMR_PROCESSOR_X86_INTELBROADWELL,
+	OMR_PROCESSOR_X86_INTELSKYLAKE,
+	OMR_PROCESSOR_X86_INTEL_LAST = OMR_PROCESSOR_X86_INTELSKYLAKE,
+	OMR_PROCESSOR_X86_AMD_FIRST,
+	OMR_PROCESSOR_X86_AMDK5 = OMR_PROCESSOR_X86_AMD_FIRST,
 	OMR_PROCESSOR_X86_AMDK6,
 	OMR_PROCESSOR_X86_AMDATHLONDURON,
 	OMR_PROCESSOR_X86_AMDOPTERON,
+	OMR_PROCESSOR_X86_AMDFAMILY15H,
+	OMR_PROCESSOR_X86_AMD_LAST = OMR_PROCESSOR_X86_AMDFAMILY15H,
+	OMR_PROCESSOR_X86_LAST = OMR_PROCESSOR_X86_AMDFAMILY15H,
 
 	OMR_PROCESOR_RISCV32_UNKNOWN,
 	OMR_PROCESOR_RISCV64_UNKNOWN,
@@ -1227,8 +1287,8 @@ typedef enum OMRProcessorArchitecture {
 
 } OMRProcessorArchitecture;
 
-/* Holds processor type and features used with j9sysinfo_get_processor_description
- * and j9sysinfo_processor_has_feature
+/* Holds processor type and features used with omrsysinfo_get_processor_description,
+ * omrsysinfo_processor_has_feature and omrsysinfo_processor_set_feature
  */
 #define OMRPORT_SYSINFO_FEATURES_SIZE 5
 typedef struct OMRProcessorDesc {
@@ -1418,7 +1478,7 @@ typedef struct OMRProcessorDesc {
 #define OMR_FEATURE_X86_MCE     7 /* Machine Check Exception. */
 #define OMR_FEATURE_X86_CX8     8 /* Compare-and-exchange 8 bytes (64 bits) instruction */
 #define OMR_FEATURE_X86_APIC    9 /* APIC On-Chip. */
-#define OMR_FEATURE_X86_10     10 /* Reserved */
+#define OMR_FEATURE_X86_0_10   10 /* Reserved */
 #define OMR_FEATURE_X86_SEP    11 /* SYSENTER and SYSEXIT Instructions. */
 #define OMR_FEATURE_X86_MTRR   12 /* Memory Type Range Registers. */
 #define OMR_FEATURE_X86_PGE    13 /* Page Global Bit. */
@@ -1428,7 +1488,7 @@ typedef struct OMRProcessorDesc {
 #define OMR_FEATURE_X86_PSE_36 17 /* 36-Bit Page Size Extension. */
 #define OMR_FEATURE_X86_PSN    18 /* Processor Serial Number. */
 #define OMR_FEATURE_X86_CLFSH  19 /* CLFLUSH Instruction. */
-#define OMR_FEATURE_X86_20     20 /* Reserved */
+#define OMR_FEATURE_X86_0_20   20 /* Reserved */
 #define OMR_FEATURE_X86_DS     21 /* Debug Store. */
 #define OMR_FEATURE_X86_ACPI   22 /* Thermal Monitor and Software Controlled Clock Facilities. */
 #define OMR_FEATURE_X86_MMX    23 /* Intel MMX Technology. */
@@ -1438,7 +1498,7 @@ typedef struct OMRProcessorDesc {
 #define OMR_FEATURE_X86_SS     27 /* Self Snoop. */
 #define OMR_FEATURE_X86_HTT    28 /* Hyper Threading. */
 #define OMR_FEATURE_X86_TM     29 /* Thermal Monitor. */
-#define OMR_FEATURE_X86_30     30 /* Reserved */
+#define OMR_FEATURE_X86_0_30   30 /* Reserved */
 #define OMR_FEATURE_X86_PBE    31 /* Pending Break Enable. */
 
 /* INTEL INSTRUCTION SET REFERENCE, A-M
@@ -1455,12 +1515,12 @@ typedef struct OMRProcessorDesc {
 #define OMR_FEATURE_X86_TM2          32 + 8 /* Thermal Monitor 2. */
 #define OMR_FEATURE_X86_SSSE3        32 + 9 /* Supplemental Streaming SIMD Extensions 3 */
 #define OMR_FEATURE_X86_CNXT_ID      32 + 10 /* L1 Context ID. */
-#define OMR_FEATURE_X86_11           32 + 11 /* Reserved */
+#define OMR_FEATURE_X86_SDBG         32 + 11 /* Processor supports IA32_DEBUG_INTERFACE MSR for silicon debug. */
 #define OMR_FEATURE_X86_FMA          32 + 12 /* FMA extensions using YMM state. */
 #define OMR_FEATURE_X86_CMPXCHG16B   32 + 13 /* CMPXCHG16B Available. */
 #define OMR_FEATURE_X86_XTPR         32 + 14 /* xTPR Update Control. */
 #define OMR_FEATURE_X86_PDCM         32 + 15 /* Perfmon and Debug Capability. */
-#define OMR_FEATURE_X86_16           32 + 16 /* Reserved. */
+#define OMR_FEATURE_X86_1_16         32 + 16 /* Reserved. */
 #define OMR_FEATURE_X86_PCID         32 + 17 /* Process-context identifiers. */
 #define OMR_FEATURE_X86_DCA          32 + 18 /* Processor supports the ability to prefetch data from a memory mapped device. */
 #define OMR_FEATURE_X86_SSE4_1       32 + 19 /* Processor supports SSE4.1. */
@@ -1475,6 +1535,45 @@ typedef struct OMRProcessorDesc {
 #define OMR_FEATURE_X86_AVX          32 + 28 /* Processor supports the AVX instruction extensions. */
 #define OMR_FEATURE_X86_F16C         32 + 29 /* 16-bit floating-point conversion instructions. */
 #define OMR_FEATURE_X86_RDRAND       32 + 30 /* Processor supports RDRAND instruction. */
+#define OMR_FEATURE_X86_1_31         32 + 31 /* Not used */
+
+
+/* INTEL INSTRUCTION SET REFERENCE, A-M
+ * Vol. 2A 3-194 Table 3-8. Feature Information Returned in the EBX Register
+ */
+#define OMR_FEATURE_X86_FSGSBASE              64 + 0 /* RDFSBASE/RDGSBASE/WRFSBASE/WRGSBASE */
+#define OMR_FEATURE_X86_IA32_TSC_ADJUST       64 + 1 /* MSR is supported if 1 */
+#define OMR_FEATURE_X86_SGX                   64 + 2 /* Software Guard Extensions */
+#define OMR_FEATURE_X86_BMI1                  64 + 3 /* BMI1 */
+#define OMR_FEATURE_X86_HLE                   64 + 4 /* HLE */
+#define OMR_FEATURE_X86_AVX2                  64 + 5 /* AVX2 */
+#define OMR_FEATURE_X86_FDP_EXCPTN_ONLY       64 + 6 /* x87 FPU Data Pointer updated only on x87 exceptions if 1 */
+#define OMR_FEATURE_X86_SMEP                  64 + 7 /* Supervisor-Mode Execution Prevention */ 
+#define OMR_FEATURE_X86_BMI2                  64 + 8 /* BMI2 */
+#define OMR_FEATURE_X86_ERMSB                 64 + 9 /* Enhanced REP MOVSB/STOSB */
+#define OMR_FEATURE_X86_INVPCID               64 + 10 /* Processor supports INVPCID instruction for system software that manages process-context
+identifiers */
+#define OMR_FEATURE_X86_RTM                   64 + 11 /* RTM */
+#define OMR_FEATURE_X86_RDT_M                 64 + 12 /* Processor supports Intel Resource Director Technology Monitoring */ 
+#define OMR_FEATURE_X86_DEPRECATES_FPUCSDS    64 + 13 /* Deprecates FPU CS and FPU DS values */ 
+#define OMR_FEATURE_X86_MPX                   64 + 14 /* Processor supports Intel Memory Protection Extensions */
+#define OMR_FEATURE_X86_RDT_A                 64 + 15 /* Processor supports Intel Resource Director Technology Allocation capability */
+#define OMR_FEATURE_X86_2_16                  64 + 16 /* Reserved */          
+#define OMR_FEATURE_X86_2_17                  64 + 17 /* Reserved */
+#define OMR_FEATURE_X86_RDSEED                64 + 18 /* RDSEED */
+#define OMR_FEATURE_X86_ADX                   64 + 19 /* ADX */
+#define OMR_FEATURE_X86_SMAP                  64 + 20 /* Processor supports Supervisor-Mode Access Prevention */
+#define OMR_FEATURE_X86_2_21                  64 + 21 /* Reserved */
+#define OMR_FEATURE_X86_2_22                  64 + 22 /* Reserved */
+#define OMR_FEATURE_X86_CLFLUSHOPT            64 + 23 /* CLFLUSHOPT */
+#define OMR_FEATURE_X86_CLWB                  64 + 24 /* CLWB */
+#define OMR_FEATURE_INTEL_PROCESSOR_TRACE     64 + 25 /* Intel Processor Trace */
+#define OMR_FEATURE_X86_2_26                  64 + 26 /* Reserved */
+#define OMR_FEATURE_X86_2_27                  64 + 27 /* Reserved */
+#define OMR_FEATURE_X86_2_28                  64 + 28 /* Reserved */
+#define OMR_FEATURE_X86_SHA                   64 + 29 /* Processor supports Intel Secure Hash Algorithm extensions */
+#define OMR_FEATURE_X86_2_30                  64 + 30 /* Reserved */
+#define OMR_FEATURE_X86_2_31                  64 + 31 /* Reserved */
 
 struct OMRPortLibrary;
 typedef struct J9Heap J9Heap;
@@ -1561,6 +1660,8 @@ typedef struct OMRPortLibrary {
 	intptr_t  ( *sysinfo_get_processor_description)(struct OMRPortLibrary *portLibrary, OMRProcessorDesc *desc) ;
 	/** see @ref omrsysinfo.c::omrsysinfo_processor_has_feature "omrsysinfo_processor_has_feature"*/
 	BOOLEAN  ( *sysinfo_processor_has_feature)(struct OMRPortLibrary *portLibrary, OMRProcessorDesc *desc, uint32_t feature) ;
+	/** see @ref omrsysinfo.c::omrsysinfo_processor_set_feature "omrsysinfo_processor_set_feature"*/
+	intptr_t  ( *sysinfo_processor_set_feature)(struct OMRPortLibrary *portLibrary, OMRProcessorDesc *desc, uint32_t feature, BOOLEAN enable) ;
 	/** see @ref omrsysinfo.c::omrsysinfo_get_OS_type "omrsysinfo_get_OS_type"*/
 	const char *(*sysinfo_get_OS_type)(struct OMRPortLibrary *portLibrary) ;
 	/** see @ref omrsysinfo.c::omrsysinfo_get_executable_name "omrsysinfo_get_executable_name"*/
@@ -2015,13 +2116,13 @@ typedef struct OMRPortLibrary {
 	/** see @ref omrsock.c::omrsock_getaddrinfo "omrsock_getaddrinfo"*/
 	int32_t (*sock_getaddrinfo)(struct OMRPortLibrary *portLibrary, char *node, char *service, omrsock_addrinfo_t hints, omrsock_addrinfo_t result) ;
 	/** see @ref omrsock.c::omrsock_getaddrinfo_length "omrsock_getaddrinfo_length"*/
-	int32_t (*sock_getaddrinfo_length)(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t hints, uint32_t *length) ;
+	int32_t (*sock_getaddrinfo_length)(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, uint32_t *length) ;
 	/** see @ref omrsock.c::omrsock_getaddrinfo_family "omrsock_getaddrinfo_family"*/
-	int32_t (*sock_getaddrinfo_family)(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *family, int32_t index )	;
+	int32_t (*sock_getaddrinfo_family)(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *family, uint32_t index) ;
 	/** see @ref omrsock.c::omrsock_getaddrinfo_socktype "omrsock_getaddrinfo_socktype"*/
-	int32_t (*sock_getaddrinfo_socktype)(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *socktype, int32_t index) ;
+	int32_t (*sock_getaddrinfo_socktype)(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *socktype, uint32_t index) ;
 	/** see @ref omrsock.c::omrsock_getaddrinfo_protocol "omrsock_getaddrinfo_protocol"*/
-	int32_t (*sock_getaddrinfo_protocol)(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *protocol, int32_t index) ;
+	int32_t (*sock_getaddrinfo_protocol)(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *protocol, uint32_t index) ;
 	/** see @ref omrsock.c::omrsock_freeaddrinfo "omrsock_freeaddrinfo"*/
 	int32_t (*sock_freeaddrinfo)(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle) ;
 	/** see @ref omrsock.c::omrsock_socket "omrsock_socket"*/
@@ -2274,6 +2375,7 @@ extern J9_CFUNC int32_t omrport_getVersion(struct OMRPortLibrary *portLibrary);
 #define omrsysinfo_get_CPU_architecture() privateOmrPortLibrary->sysinfo_get_CPU_architecture(privateOmrPortLibrary)
 #define omrsysinfo_get_processor_description(param1) privateOmrPortLibrary->sysinfo_get_processor_description(privateOmrPortLibrary,param1)
 #define omrsysinfo_processor_has_feature(param1,param2) privateOmrPortLibrary->sysinfo_processor_has_feature(privateOmrPortLibrary,param1,param2)
+#define omrsysinfo_processor_set_feature(param1,param2,param3) privateOmrPortLibrary->sysinfo_processor_set_feature(privateOmrPortLibrary,param1,param2,param3) 
 #define omrsysinfo_get_OS_type() privateOmrPortLibrary->sysinfo_get_OS_type(privateOmrPortLibrary)
 #define omrsysinfo_get_executable_name(param1,param2) privateOmrPortLibrary->sysinfo_get_executable_name(privateOmrPortLibrary, (param1), (param2))
 #define omrsysinfo_get_username(param1,param2) privateOmrPortLibrary->sysinfo_get_username(privateOmrPortLibrary, (param1), (param2))

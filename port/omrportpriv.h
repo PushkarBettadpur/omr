@@ -482,6 +482,8 @@ extern J9_CFUNC intptr_t
 omrsysinfo_get_processor_description(struct OMRPortLibrary *portLibrary, OMRProcessorDesc *desc);
 extern J9_CFUNC BOOLEAN
 omrsysinfo_processor_has_feature(struct OMRPortLibrary *portLibrary, OMRProcessorDesc *desc, uint32_t feature);
+extern J9_CFUNC intptr_t
+omrsysinfo_processor_set_feature(struct OMRPortLibrary *portLibrary, OMRProcessorDesc *desc, uint32_t feature, BOOLEAN enable);
 extern J9_CFUNC const char *
 omrsysinfo_get_OS_version(struct OMRPortLibrary *portLibrary);
 extern J9_CFUNC int32_t
@@ -620,13 +622,13 @@ omrsock_getaddrinfo_create_hints(struct OMRPortLibrary *portLibrary, omrsock_add
 extern J9_CFUNC int32_t
 omrsock_getaddrinfo(struct OMRPortLibrary *portLibrary, char *node, char *service, omrsock_addrinfo_t hints, omrsock_addrinfo_t result);
 extern J9_CFUNC int32_t
-omrsock_getaddrinfo_length(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t hints, uint32_t *length);
+omrsock_getaddrinfo_length(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, uint32_t *length);
 extern J9_CFUNC int32_t
-omrsock_getaddrinfo_family(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *family, int32_t index);
+omrsock_getaddrinfo_family(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *family, uint32_t index);
 extern J9_CFUNC int32_t
-omrsock_getaddrinfo_socktype(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *socktype, int32_t index);
+omrsock_getaddrinfo_socktype(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *socktype, uint32_t index);
 extern J9_CFUNC int32_t
-omrsock_getaddrinfo_protocol(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *protocol, int32_t index);
+omrsock_getaddrinfo_protocol(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle, int32_t *protocol, uint32_t index);
 extern J9_CFUNC int32_t
 omrsock_freeaddrinfo(struct OMRPortLibrary *portLibrary, omrsock_addrinfo_t handle);
 extern J9_CFUNC int32_t

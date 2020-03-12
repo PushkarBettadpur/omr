@@ -43,10 +43,12 @@
 #include <mach-o/dyld.h>
 #include <sys/param.h>
 #include <sys/mount.h>
+#endif /* defined(LINUX) && !defined(OMRZTPF) */
+
+#if defined(OSX) || defined(OMR_OS_BSD)
 #include <sys/types.h>
 #include <sys/sysctl.h>
-
-#endif /* defined(LINUX) && !defined(OMRZTPF) */
+#endif /* defined(OSX) || defined(OMR_OS_BSD) */
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -631,7 +633,7 @@ omrsysinfo_processor_has_feature(struct OMRPortLibrary *portLibrary, OMRProcesso
 
 #if defined(J9OS_I5)
 #if defined(J9OS_I5_V5R4)
-	if ((OMR_FEATURE_PPC_HAS_VSX == feature) || (OMRPORT_PPC_FEATURE_HAS_ALTIVEC == feature) || (OMRPORT_PPC_FEATURE_HTM == feature)) {
+	if ((OMR_FEATURE_PPC_HAS_VSX == feature) || (OMR_FEATURE_PPC_HAS_ALTIVEC == feature) || (OMR_FEATURE_PPC_HTM == feature)) {
 		Trc_PRT_sysinfo_processor_has_feature_Exit((UDATA)rc);
 		return rc;
 	}
@@ -647,10 +649,33 @@ omrsysinfo_processor_has_feature(struct OMRPortLibrary *portLibrary, OMRProcesso
 		uint32_t featureIndex = feature / 32;
 		uint32_t featureShift = feature % 32;
 
-		rc = OMR_ARE_ALL_BITS_SET(desc->features[featureIndex], 1 << featureShift);
+		rc = OMR_ARE_ALL_BITS_SET(desc->features[featureIndex], 1u << featureShift);
 	}
 
 	Trc_PRT_sysinfo_processor_has_feature_Exit((uintptr_t)rc);
+	return rc;
+}
+
+intptr_t
+omrsysinfo_processor_set_feature(struct OMRPortLibrary *portLibrary, OMRProcessorDesc *desc, uint32_t feature, BOOLEAN enable)
+{
+	intptr_t rc = -1;
+	Trc_PRT_sysinfo_processor_set_feature_Entered(desc, feature, enable);
+
+	if ((NULL != desc) && (feature < (OMRPORT_SYSINFO_OS_FEATURES_SIZE * 32))) {
+		uint32_t featureIndex = feature / 32;
+		uint32_t featureShift = feature % 32;
+
+		if (enable) {
+			desc->features[featureIndex] |= (1u << featureShift);
+		}
+		else {
+			desc->features[featureIndex] &= ~(1u << featureShift);
+		}
+		rc = 0;
+	}
+
+	Trc_PRT_sysinfo_processor_set_feature_Exit(rc);
 	return rc;
 }
 
@@ -670,7 +695,7 @@ omrsysinfo_set_feature(OMRProcessorDesc *desc, uint32_t feature)
 		uint32_t featureIndex = feature / 32;
 		uint32_t featureShift = feature % 32;
 
-		desc->features[featureIndex] = (desc->features[featureIndex] | (1 << (featureShift)));
+		desc->features[featureIndex] = (desc->features[featureIndex] | (1u << (featureShift)));
 	}
 }
 #endif /* defined(AIXPPC) || defined(S390) || defined(J9ZOS390) */
@@ -2894,9 +2919,16 @@ omrsysinfo_get_physical_memory(struct OMRPortLibrary *portLibrary)
 	J9CVT * __ptr32 cvtp = ((J9PSA * __ptr32)0)->flccvt;
 	J9RCE * __ptr32 rcep = cvtp->cvtrcep;
 	result = ((U_64)rcep->rcepool * J9BYTES_PER_PAGE);
-#elif defined(OSX)
+#elif defined(OSX) || defined(OMR_OS_BSD)
 	{
-		int name[2] = {CTL_HW, HW_MEMSIZE};
+		int name[2] = {
+			CTL_HW,
+#if defined(OSX)
+			HW_MEMSIZE
+#elif defined(OMR_OS_BSD)
+			HW_PHYSMEM
+#endif
+};
 		size_t len = sizeof(result);
 
 		if (0 != sysctl(name, 2, &result, &len, NULL, 0)) {
@@ -4717,7 +4749,7 @@ setOSFeature(struct OMROSDesc *desc, uint32_t feature)
 		uint32_t featureIndex = feature / 32;
 		uint32_t featureShift = feature % 32;
 
-		desc->features[featureIndex] = (desc->features[featureIndex] | (1 << (featureShift)));
+		desc->features[featureIndex] = (desc->features[featureIndex] | (1u << (featureShift)));
 	}
 }
 
@@ -4774,7 +4806,7 @@ omrsysinfo_os_has_feature(struct OMRPortLibrary *portLibrary, struct OMROSDesc *
 		uint32_t featureIndex = feature / 32;
 		uint32_t featureShift = feature % 32;
 
-		rc = OMR_ARE_ALL_BITS_SET(desc->features[featureIndex], 1 << featureShift);
+		rc = OMR_ARE_ALL_BITS_SET(desc->features[featureIndex], 1u << featureShift);
 	}
 
 	Trc_PRT_sysinfo_os_has_feature_Exit((uintptr_t)rc);

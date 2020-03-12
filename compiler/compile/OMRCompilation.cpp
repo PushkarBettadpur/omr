@@ -401,7 +401,9 @@ OMR::Compilation::Compilation(
 
    //codegen also needs _methodSymbol
    _codeGenerator = allocateCodeGenerator(self());
-   _recompilationInfo = _codeGenerator->allocateRecompilationInfo();
+
+   _recompilationInfo = _codeGenerator->getSupportsRecompilation() ? _codeGenerator->allocateRecompilationInfo() : NULL;
+
    _globalRegisterCandidates = new (self()->trHeapMemory()) TR_RegisterCandidates(self());
 
 #ifdef J9_PROJECT_SPECIFIC
@@ -459,7 +461,10 @@ OMR::Compilation::Compilation(
    else
       _osrCompilationData = NULL;
 
-
+  if (self()->getOption(TR_ForceGenerateReadOnlyCode))
+      {
+      self()->setGenerateReadOnlyCode();
+      }
 
    }
 
@@ -2757,7 +2762,7 @@ bool OMR::Compilation::isRecursiveMethodTarget(TR::Symbol *targetSymbol)
 const TR::TypeLayout* OMR::Compilation::typeLayout(TR_OpaqueClassBlock * clazz)
    {
    TR::Region& region = self()->region();
-   auto it = _typeLayoutMap.find(clazz); 
+   auto it = _typeLayoutMap.find(clazz);
    if (it != _typeLayoutMap.end())
       {
       return it->second;
@@ -2765,7 +2770,7 @@ const TR::TypeLayout* OMR::Compilation::typeLayout(TR_OpaqueClassBlock * clazz)
    else
       {
       const TR::TypeLayout* layout = TR::Compiler->cls.enumerateFields(region, clazz, self());
-      _typeLayoutMap.insert(std::make_pair(clazz, layout)); 
-      return layout; 
+      _typeLayoutMap.insert(std::make_pair(clazz, layout));
+      return layout;
       }
    }
