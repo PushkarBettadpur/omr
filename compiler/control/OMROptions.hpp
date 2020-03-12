@@ -1562,6 +1562,10 @@ public:
    int32_t   getStoreSinkingLastOpt()          {return _storeSinkingLastOpt;}
    int32_t   getFirstOptTransformationIndex()  {return _firstOptTransformationIndex;}
    int32_t   getLastOptTransformationIndex()   {return _lastOptTransformationIndex;}
+
+   /* pushkar changes */
+   int32_t   getZZArrayModificationCounter()   {return _zzarrayModificationCounter;}
+
    int32_t   getMinFirstOptTransformationIndex()  {return -1;}
    int32_t   getMaxLastOptTransformationIndex()   {return INT_MAX;}
 
@@ -1866,7 +1870,7 @@ public:
    static uint32_t _virtualMemoryCheckFrequencySec;
    static uint32_t _cpuUsageCircularBufferUpdateFrequencySec;
    static uint32_t _cpuUsageCircularBufferSize;
-
+   
    // Debug counter insertion options
    static TR::SimpleRegex *_debugCounterInsertByteCode;
    static TR::SimpleRegex *_debugCounterInsertJittedBody;
@@ -2414,6 +2418,9 @@ protected:
    int32_t                     _loopyAsyncCheckInsertionMaxEntryFreq;
 
    char *                      _objectFileName; //Name of the relocatable ELF file *.o if one is to be generated
+ 
+   /* Pushkar modification */
+   int32_t _zzarrayModificationCounter;
 
    }; // TR::Options
 
