@@ -1663,7 +1663,12 @@ bool OMR::Compilation::generateArraylets()
    {
    if (TR::Compiler->om.canGenerateArraylets())
       {
-      return TR::Compiler->om.useHybridArraylets() ? false : true;
+      bool ret = TR::Compiler->om.useHybridArraylets();
+      if (!ret)
+          TR_ASSERT_FATAL(false,"Pushkar Forced Assert\n");
+      else
+          return false;
+      //return TR::Compiler->om.useHybridArraylets() ? false : true;
       }
    else
       {
