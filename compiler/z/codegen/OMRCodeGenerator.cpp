@@ -314,8 +314,8 @@ OMR::Z::CodeGenerator::lowerTreeIfNeeded(
          if (add1->isInternalPointer()) {
              isInternalPointer = true;
 	     pinningArrayPointer = add1->getPinningArrayPointer(); 
+             traceMsg(comp(), "PB Lower Trees - FirstChild == addOp\n");
          }
-         traceMsg(comp(), "PB Lower Trees - FirstChild == addOp\n");
       }
       if (add1 && add1->getFirstChild()->getOpCodeValue() == addOp)
          {
@@ -324,8 +324,8 @@ OMR::Z::CodeGenerator::lowerTreeIfNeeded(
          if (add2->isInternalPointer()) {
              isInternalPointer = true;
              pinningArrayPointer = add2->getPinningArrayPointer();
+             traceMsg(comp(), "PB Lower Trees - add1->FirstChild == addOp\n");
          }
-         traceMsg(comp(), "PB Lower Trees - add1->FirstChild == addOp\n");
          }
       if (add1 && add1->getSecondChild()->getOpCodeValue() == subOp) {
          sub = add1->getSecondChild();
@@ -351,12 +351,12 @@ OMR::Z::CodeGenerator::lowerTreeIfNeeded(
          {
          if (add2->getFirstChild()->getOpCodeValue() == addOp)
             {
-            traceMsg(comp(), "PB Lower Trees - NULL Consts\n");
             index = add2->getSecondChild();
             add2 = add2->getFirstChild();
             if (add2->isInternalPointer()) {
                 isInternalPointer = true;
                 pinningArrayPointer = add2->getPinningArrayPointer();
+                traceMsg(comp(), "PB Lower Trees - NULL Consts\n");
             }
             base = add2->getFirstChild();
             if (add2->getSecondChild()->getOpCode().isLoadConst())
@@ -396,7 +396,8 @@ OMR::Z::CodeGenerator::lowerTreeIfNeeded(
          TR::Node* newConst = TR::Node::create(constOp, 0);
          if (isInternalPointer) {
              newAdd2->setIsInternalPointer(true);
-             newAdd2->setPinningArrayPointer(pinningArrayPointer);
+             if (pinningArrayPointer)
+                 newAdd2->setPinningArrayPointer(pinningArrayPointer);
          }
 
          if (self()->comp()->target().is64Bit())
